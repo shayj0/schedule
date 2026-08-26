@@ -1,0 +1,1975 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f1f5f1">
+    <meta name="default-database-url" content="">
+    <title>우리팀 달력</title>
+    <style>
+      :root {
+        --canvas: #eef4ef;
+        --paper: #fffefb;
+        --ink: #25332e;
+        --muted: #6f7d77;
+        --line: #d8e2dc;
+        --line-strong: #bdccc3;
+        --home-bg: #c8e9df;
+        --home-ink: #205d50;
+        --vacation-bg: #ffc1b1;
+        --vacation-ink: #873d31;
+        --training-bg: #c9e2f3;
+        --training-ink: #285c7d;
+        --custom-bg: #f5df86;
+        --custom-ink: #64531c;
+        --focus: #1f6f9f;
+        --accent: #f0d66d;
+        --accent-ink: #4c431d;
+        --sky: #c5dff0;
+        --danger: #b74736;
+        --shadow: 0 16px 44px rgba(47, 70, 59, 0.11);
+        color: var(--ink);
+        background: var(--canvas);
+        font-family: "Gowun Dodum", "NanumSquareRound", "Malgun Gothic", sans-serif;
+        font-synthesis: none;
+      }
+
+      * {
+        box-sizing: border-box;
+        letter-spacing: 0;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      html {
+        min-width: 320px;
+        background: var(--canvas);
+      }
+
+      body {
+        min-width: 320px;
+        min-height: 100vh;
+        margin: 0;
+        background:
+          linear-gradient(90deg, var(--home-bg) 0 25%, var(--accent) 25% 50%, var(--vacation-bg) 50% 75%, var(--sky) 75%) top / 100% 7px no-repeat,
+          var(--canvas);
+      }
+
+      button,
+      input {
+        font: inherit;
+      }
+
+      button {
+        color: inherit;
+      }
+
+      button:not(:disabled) {
+        cursor: pointer;
+      }
+
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.48;
+      }
+
+      :focus-visible {
+        outline: 3px solid var(--focus);
+        outline-offset: 2px;
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      #app {
+        min-height: 100vh;
+        padding-top: 7px;
+      }
+
+      .app-shell {
+        width: min(100%, 760px);
+        min-height: calc(100vh - 7px);
+        margin-inline: auto;
+        background: var(--paper);
+      }
+
+      .topbar {
+        display: flex;
+        min-height: 72px;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 15px 16px 12px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .brand {
+        display: flex;
+        min-width: 0;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .brand-mark {
+        position: relative;
+        display: grid;
+        width: 38px;
+        height: 38px;
+        flex: 0 0 38px;
+        place-items: center;
+        border: 1px solid #dfbf49;
+        border-radius: 8px;
+        color: var(--accent-ink);
+        background: var(--accent);
+        font-size: 13px;
+        font-weight: 700;
+        box-shadow: inset 0 7px 0 rgba(255, 255, 255, 0.35);
+      }
+
+      .brand-mark::before,
+      .brand-mark::after {
+        position: absolute;
+        top: -4px;
+        width: 3px;
+        height: 9px;
+        border-radius: 2px;
+        background: var(--ink);
+        content: "";
+      }
+
+      .brand-mark::before { left: 10px; }
+      .brand-mark::after { right: 10px; }
+
+      .brand-copy {
+        min-width: 0;
+      }
+
+      .brand-copy strong {
+        display: block;
+        overflow: hidden;
+        font-size: 17px;
+        font-weight: 700;
+        line-height: 1.25;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .brand-copy small {
+        display: block;
+        margin-top: 2px;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .toolbar {
+        display: flex;
+        flex: 0 0 auto;
+        gap: 7px;
+      }
+
+      .icon-button,
+      .month-button {
+        display: inline-grid;
+        width: 38px;
+        height: 38px;
+        place-items: center;
+        border: 1px solid var(--line-strong);
+        border-radius: 7px;
+        background: #fff;
+        font-size: 19px;
+        line-height: 1;
+      }
+
+      .icon-button:hover,
+      .month-button:hover {
+        border-color: var(--ink);
+        background: #f7faf7;
+      }
+
+      .create-page {
+        display: grid;
+        min-height: calc(100vh - 7px);
+        align-content: start;
+      }
+
+      .create-intro {
+        padding: 36px 20px 24px;
+        border-bottom: 1px solid var(--line);
+        background: #f9fcf9;
+      }
+
+      .eyebrow {
+        margin: 0 0 8px;
+        color: var(--home-ink);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .create-intro h1 {
+        max-width: 430px;
+        margin: 0;
+        font-size: clamp(27px, 8vw, 39px);
+        font-weight: 700;
+        line-height: 1.24;
+      }
+
+      .create-intro p {
+        max-width: 500px;
+        margin: 13px 0 0;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.65;
+      }
+
+      .create-form {
+        padding: 26px 20px 40px;
+      }
+
+      .form-section + .form-section {
+        margin-top: 28px;
+        padding-top: 25px;
+        border-top: 1px solid var(--line);
+      }
+
+      .section-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      .section-heading h2 {
+        margin: 0;
+        font-size: 16px;
+      }
+
+      .field {
+        display: grid;
+        gap: 7px;
+      }
+
+      .field + .field {
+        margin-top: 12px;
+      }
+
+      .field label {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .field input {
+        width: 100%;
+        height: 46px;
+        border: 1px solid var(--line-strong);
+        border-radius: 7px;
+        padding: 0 12px;
+        color: var(--ink);
+        background: #fff;
+      }
+
+      .field input::placeholder {
+        color: #a5b0aa;
+      }
+
+      .field input[aria-invalid="true"] {
+        border-color: var(--danger);
+      }
+
+      .field-hint,
+      .field-error,
+      .form-message {
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .field-hint { color: var(--muted); }
+      .field-error,
+      .form-message.error { color: var(--danger); }
+
+      .member-row {
+        display: grid;
+        grid-template-columns: 1fr 38px;
+        gap: 7px;
+        align-items: end;
+        margin-top: 11px;
+      }
+
+      .member-row.required {
+        grid-template-columns: 1fr;
+      }
+
+      .remove-button {
+        width: 38px;
+        height: 46px;
+        border: 1px solid var(--line-strong);
+        border-radius: 7px;
+        color: var(--danger);
+        background: #fff;
+        font-size: 19px;
+      }
+
+      .small-button,
+      .text-button {
+        min-height: 34px;
+        border: 1px solid var(--line-strong);
+        border-radius: 7px;
+        padding: 6px 10px;
+        background: #fff;
+        font-size: 12px;
+      }
+
+      .connection-switch {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+        padding: 4px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #f3f6f3;
+      }
+
+      .connection-switch button {
+        min-height: 40px;
+        border: 1px solid transparent;
+        border-radius: 6px;
+        background: transparent;
+        font-size: 13px;
+      }
+
+      .connection-switch button.active {
+        border-color: var(--line-strong);
+        background: #fff;
+        box-shadow: 0 2px 6px rgba(37, 51, 46, 0.07);
+        font-weight: 700;
+      }
+
+      .database-field {
+        margin-top: 13px;
+      }
+
+      .privacy-note {
+        margin: 13px 0 0;
+        padding-left: 12px;
+        border-left: 3px solid var(--accent);
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 1.6;
+      }
+
+      .primary-button {
+        width: 100%;
+        min-height: 49px;
+        margin-top: 26px;
+        border: 1px solid #dfbf49;
+        border-radius: 8px;
+        color: var(--accent-ink);
+        background: var(--accent);
+        font-weight: 700;
+      }
+
+      .primary-button:hover { background: #f6df82; }
+
+      .calendar-page {
+        min-height: calc(100vh - 7px);
+      }
+
+      .connection-state {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .connection-state::before {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #9ca8a1;
+        content: "";
+      }
+
+      .connection-state.online::before { background: #3ca276; }
+      .connection-state.offline::before { background: var(--vacation-ink); }
+      .connection-state.local::before { background: #598fb2; }
+
+      .month-nav {
+        display: grid;
+        grid-template-columns: 38px 1fr 38px;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 16px;
+      }
+
+      .month-title {
+        margin: 0;
+        text-align: center;
+        font-size: 20px;
+      }
+
+      .member-picker {
+        display: flex;
+        gap: 7px;
+        overflow-x: auto;
+        padding: 0 16px 13px;
+        scrollbar-width: none;
+      }
+
+      .member-picker::-webkit-scrollbar { display: none; }
+
+      .member-button {
+        min-width: max-content;
+        min-height: 36px;
+        border: 1px solid var(--line-strong);
+        border-radius: 7px;
+        padding: 6px 10px;
+        background: #fff;
+        font-size: 12px;
+      }
+
+      .member-button[aria-pressed="true"] {
+        border-color: #78a9c8;
+        color: #235b7d;
+        background: #e6f2fa;
+        font-weight: 700;
+      }
+
+      .member-dot {
+        display: inline-block;
+        width: 7px;
+        height: 7px;
+        margin-right: 5px;
+        border-radius: 50%;
+        background: #79aeca;
+      }
+
+      .calendar-wrap {
+        border-top: 1px solid var(--line);
+        border-left: 1px solid var(--line);
+      }
+
+      .weekdays,
+      .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+      }
+
+      .weekday {
+        display: grid;
+        min-width: 0;
+        height: 29px;
+        place-items: center;
+        border-right: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+        color: var(--muted);
+        background: #f7f9f7;
+        font-size: 10px;
+      }
+
+      .weekday:first-child { color: var(--vacation-ink); }
+
+      .day-cell {
+        position: relative;
+        display: block;
+        min-width: 0;
+        height: 70px;
+        overflow: hidden;
+        border: 0;
+        border-right: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+        border-radius: 0;
+        padding: 5px 4px;
+        text-align: left;
+        background: rgba(255, 255, 255, 0.86);
+      }
+
+      .day-cell.empty {
+        background: #f4f6f3;
+      }
+
+      .day-cell:not(.empty):hover {
+        background: #f8fbf8;
+      }
+
+      .day-cell.selected {
+        background: #fff9d9;
+        box-shadow: inset 0 0 0 2px var(--accent);
+      }
+
+      .day-cell.today .day-number {
+        display: inline-grid;
+        width: 20px;
+        height: 20px;
+        place-items: center;
+        border-radius: 50%;
+        color: #fff;
+        background: var(--ink);
+      }
+
+      .day-cell.sunday .day-number { color: var(--vacation-ink); }
+      .day-cell.today.sunday .day-number { color: #fff; }
+
+      .day-number {
+        display: block;
+        height: 21px;
+        font-size: 10px;
+        line-height: 20px;
+      }
+
+      .schedule-badge {
+        display: block;
+        width: 100%;
+        margin-top: 2px;
+        overflow: hidden;
+        border-radius: 4px;
+        padding: 2px 3px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 8px;
+        line-height: 1.3;
+      }
+
+      .schedule-badge.home,
+      .status-button.home,
+      .day-summary-item.home {
+        color: var(--home-ink);
+        background: var(--home-bg);
+      }
+
+      .schedule-badge.vacation,
+      .status-button.vacation,
+      .day-summary-item.vacation {
+        color: var(--vacation-ink);
+        background: var(--vacation-bg);
+      }
+
+      .schedule-badge.training,
+      .status-button.training,
+      .day-summary-item.training {
+        color: var(--training-ink);
+        background: var(--training-bg);
+      }
+
+      .schedule-badge.custom,
+      .status-button.custom,
+      .day-summary-item.custom {
+        color: var(--custom-ink);
+        background: var(--custom-bg);
+      }
+
+      .more-count {
+        display: block;
+        margin-top: 2px;
+        color: var(--muted);
+        font-size: 8px;
+        text-align: right;
+      }
+
+      .status-editor {
+        position: sticky;
+        bottom: 0;
+        z-index: 2;
+        padding: 15px 16px 18px;
+        border-top: 1px solid var(--line);
+        background: rgba(255, 254, 251, 0.97);
+        box-shadow: 0 -8px 22px rgba(47, 70, 59, 0.07);
+      }
+
+      .selected-day-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .selected-day-head h2 {
+        margin: 0;
+        font-size: 15px;
+      }
+
+      .editor-person {
+        overflow: hidden;
+        color: var(--muted);
+        font-size: 11px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .day-summary {
+        display: flex;
+        min-height: 26px;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-top: 8px;
+      }
+
+      .day-summary:empty::before {
+        color: var(--muted);
+        content: "등록된 일정 없음";
+        font-size: 11px;
+      }
+
+      .day-summary-person {
+        display: inline-flex;
+        min-width: 0;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 4px;
+        padding: 3px;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        background: #fff;
+      }
+
+      .day-summary-name {
+        padding: 1px 4px;
+        font-size: 10px;
+        font-weight: 700;
+      }
+
+      .day-summary-item {
+        min-width: 0;
+        border-radius: 5px;
+        padding: 4px 7px;
+        font-size: 10px;
+      }
+
+      .status-buttons {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(68px, 1fr));
+        gap: 7px;
+        margin-top: 10px;
+      }
+
+      .status-button {
+        min-width: 0;
+        height: 40px;
+        border: 1px solid var(--line-strong);
+        border-radius: 7px;
+        background: #f5f7f4;
+        font-size: 12px;
+      }
+
+      .status-button[aria-pressed="true"] {
+        border-color: currentColor;
+        box-shadow: inset 0 0 0 1px currentColor;
+        font-weight: 700;
+      }
+
+      .custom-editor {
+        margin-top: 10px;
+        border: 1px solid var(--line-strong);
+        border-radius: 8px;
+        padding: 11px;
+        background: #fffdf3;
+      }
+
+      .custom-editor label {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--custom-ink);
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .custom-editor input {
+        width: 100%;
+        height: 40px;
+        border: 1px solid var(--line-strong);
+        border-radius: 7px;
+        padding: 0 10px;
+        color: var(--ink);
+        background: #fff;
+      }
+
+      .custom-editor input[aria-invalid="true"] {
+        border-color: var(--danger);
+      }
+
+      .custom-error {
+        min-height: 18px;
+        margin: 4px 0 0;
+        color: var(--danger);
+        font-size: 11px;
+      }
+
+      .custom-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 6px;
+        margin-top: 7px;
+      }
+
+      .toast {
+        position: fixed;
+        z-index: 20;
+        left: 50%;
+        bottom: 20px;
+        width: max-content;
+        max-width: calc(100vw - 32px);
+        transform: translateX(-50%);
+        border: 1px solid #18231f;
+        border-radius: 7px;
+        padding: 10px 13px;
+        color: #fff;
+        background: #25332e;
+        box-shadow: var(--shadow);
+        font-size: 12px;
+      }
+
+      .state-page {
+        display: grid;
+        min-height: calc(100vh - 7px);
+        place-items: center;
+        padding: 30px 20px;
+        text-align: center;
+      }
+
+      .state-content {
+        max-width: 380px;
+      }
+
+      .state-mark {
+        display: grid;
+        width: 52px;
+        height: 52px;
+        margin: 0 auto 16px;
+        place-items: center;
+        border: 1px solid var(--line-strong);
+        border-radius: 8px;
+        background: #fff;
+        font-size: 22px;
+      }
+
+      .state-content h1 {
+        margin: 0;
+        font-size: 22px;
+      }
+
+      .state-content p {
+        margin: 10px 0 20px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.65;
+      }
+
+      .state-actions {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      dialog {
+        width: min(calc(100% - 32px), 430px);
+        border: 1px solid var(--line-strong);
+        border-radius: 8px;
+        padding: 0;
+        color: var(--ink);
+        background: var(--paper);
+        box-shadow: var(--shadow);
+      }
+
+      dialog::backdrop { background: rgba(24, 35, 31, 0.32); }
+
+      .dialog-content { padding: 20px; }
+      .dialog-content h2 { margin: 0; font-size: 18px; }
+      .dialog-content p { color: var(--muted); font-size: 12px; line-height: 1.6; }
+      .dialog-actions { display: flex; justify-content: flex-end; gap: 7px; margin-top: 16px; }
+
+      .manual-link {
+        width: 100%;
+        min-height: 42px;
+        border: 1px solid var(--line-strong);
+        border-radius: 7px;
+        padding: 8px;
+        font-size: 11px;
+      }
+
+      @media (min-width: 620px) {
+        .app-shell {
+          min-height: calc(100vh - 47px);
+          margin-top: 40px;
+          margin-bottom: 40px;
+          border: 1px solid var(--line-strong);
+          box-shadow: var(--shadow);
+        }
+
+        .create-form,
+        .create-intro {
+          padding-inline: 44px;
+        }
+
+        .day-cell { height: 88px; padding: 7px 6px; }
+        .schedule-badge { font-size: 10px; }
+        .status-editor { position: static; box-shadow: none; }
+      }
+
+      @media (prefers-reduced-motion: no-preference) {
+        .topbar,
+        .member-picker,
+        .calendar-wrap {
+          animation: settle 320ms ease-out both;
+        }
+
+        .member-picker { animation-delay: 60ms; }
+        .calendar-wrap { animation-delay: 110ms; }
+
+        @keyframes settle {
+          from { opacity: 0; transform: translateY(6px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main id="app" aria-live="polite"><p class="sr-only">우리팀 달력을 준비하고 있어요.</p></main>
+    <div id="announcer" class="sr-only" aria-live="polite"></div>
+
+    <script type="module" id="app-module">
+      const ROOM_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+      const FIXED_STATUSES = ['home', 'vacation', 'training']
+      const STATUS_LABELS = { home: '재택', vacation: '휴가', training: '교육' }
+
+      const pad = (value) => String(value).padStart(2, '0')
+
+      export function validateRoomDraft(draft) {
+        const title = String(draft.title ?? '').trim()
+        const names = Array.from(draft.names ?? [], (name) => String(name).trim())
+        const fieldErrors = {}
+
+        if (!title || title.length > 30) {
+          fieldErrors.title = '팀 이름은 1~30자로 입력해 주세요.'
+        }
+        if (names.length < 2 || names.length > 6) {
+          fieldErrors.form = '이름은 2~6명까지 입력할 수 있어요.'
+        }
+
+        names.forEach((name, index) => {
+          if (!name || name.length > 12) {
+            ;(fieldErrors.names ??= {})[index] = '이름은 1~12자로 입력해 주세요.'
+            return
+          }
+          const normalized = name.toLocaleLowerCase('ko-KR')
+          const firstIndex = names.findIndex(
+            (candidate) => candidate.toLocaleLowerCase('ko-KR') === normalized,
+          )
+          if (firstIndex !== index) {
+            ;(fieldErrors.names ??= {})[index] = '이름이 중복됐어요.'
+          }
+        })
+
+        return Object.keys(fieldErrors).length > 0
+          ? { ok: false, fieldErrors }
+          : { ok: true, value: { title, names } }
+      }
+
+      export function monthKey(year, monthIndex) {
+        return `${year}-${pad(monthIndex + 1)}`
+      }
+
+      export function dateKey(year, monthIndex, day) {
+        return `${monthKey(year, monthIndex)}-${pad(day)}`
+      }
+
+      export function buildMonthGrid(year, monthIndex, today = new Date()) {
+        const firstWeekday = new Date(year, monthIndex, 1).getDay()
+        const daysInMonth = new Date(year, monthIndex + 1, 0).getDate()
+
+        return Array.from({ length: 42 }, (_, index) => {
+          const day = index - firstWeekday + 1
+          if (day < 1 || day > daysInMonth) return null
+          return {
+            day,
+            key: dateKey(year, monthIndex, day),
+            isSunday: index % 7 === 0,
+            isToday:
+              today.getFullYear() === year &&
+              today.getMonth() === monthIndex &&
+              today.getDate() === day,
+          }
+        })
+      }
+
+      export function normalizeMemberSchedule(value) {
+        if (value === 'home' || value === 'vacation') return { [value]: true }
+        if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
+
+        const normalized = {}
+        FIXED_STATUSES.forEach((status) => {
+          if (value[status] === true) normalized[status] = true
+        })
+        if (typeof value.custom === 'string') {
+          const custom = value.custom.trim()
+          if (custom.length >= 1 && custom.length <= 12) normalized.custom = custom
+        }
+        return normalized
+      }
+
+      export function toggleFixedStatus(value, status) {
+        if (!FIXED_STATUSES.includes(status)) throw new RangeError(`Unsupported fixed status: ${status}`)
+        const nextValue = normalizeMemberSchedule(value)
+        if (nextValue[status]) delete nextValue[status]
+        else nextValue[status] = true
+        return nextValue
+      }
+
+      export function setCustomSchedule(value, text) {
+        const custom = String(text ?? '').trim()
+        if (custom.length < 1 || custom.length > 12) {
+          throw new RangeError('기타 일정은 1~12자로 입력해 주세요.')
+        }
+        return { ...normalizeMemberSchedule(value), custom }
+      }
+
+      export function clearCustomSchedule(value) {
+        const nextValue = normalizeMemberSchedule(value)
+        delete nextValue.custom
+        return nextValue
+      }
+
+      export function isEmptyMemberSchedule(value) {
+        return Object.keys(normalizeMemberSchedule(value)).length === 0
+      }
+
+      export function memberScheduleLabel(value) {
+        const schedule = normalizeMemberSchedule(value)
+        const labels = FIXED_STATUSES.filter((status) => schedule[status]).map((status) => STATUS_LABELS[status])
+        if (schedule.custom) labels.push(schedule.custom)
+        return labels.join('·')
+      }
+
+      export function serializeMemberSchedule(value) {
+        const schedule = normalizeMemberSchedule(value)
+        return Object.keys(schedule).length > 0 ? schedule : null
+      }
+
+      export function summarizeDay(daySchedules = {}, members = {}) {
+        const allBadges = Object.entries(daySchedules)
+          .filter(([memberId]) => members[memberId])
+          .map(([memberId, value]) => [memberId, normalizeMemberSchedule(value)])
+          .filter(([, schedule]) => Object.keys(schedule).length > 0)
+          .sort(([leftId], [rightId]) => members[leftId].order - members[rightId].order)
+          .map(([memberId, schedule]) => ({
+            memberId,
+            name: members[memberId].name,
+            schedule,
+            label: memberScheduleLabel(schedule),
+          }))
+
+        return {
+          badges: allBadges.slice(0, 2),
+          hiddenCount: Math.max(0, allBadges.length - 2),
+        }
+      }
+
+      export function normalizeDatabaseUrl(rawValue) {
+        try {
+          const url = new URL(String(rawValue).trim())
+          const isFirebaseHost =
+            url.hostname.endsWith('.firebaseio.com') ||
+            url.hostname.endsWith('.firebasedatabase.app')
+          if (url.protocol !== 'https:' || !isFirebaseHost || (url.pathname !== '/' && url.pathname !== '')) {
+            return null
+          }
+          return url.origin
+        } catch {
+          return null
+        }
+      }
+
+      export function resolveDatabaseUrl({ queryValue, metaValue, rememberedValue }) {
+        return normalizeDatabaseUrl(queryValue)
+          ?? normalizeDatabaseUrl(metaValue)
+          ?? normalizeDatabaseUrl(rememberedValue)
+      }
+
+      export function hasInvalidExplicitDatabaseUrl(queryValue) {
+        return Boolean(queryValue) && normalizeDatabaseUrl(queryValue) === null
+      }
+
+      function cloneJson(value) {
+        return value == null ? value : JSON.parse(JSON.stringify(value))
+      }
+
+      function mergePatch(target, patch) {
+        const nextTarget = target && typeof target === 'object' ? target : {}
+        Object.entries(patch ?? {}).forEach(([key, value]) => {
+          if (value === null) delete nextTarget[key]
+          else nextTarget[key] = cloneJson(value)
+        })
+        return nextTarget
+      }
+
+      export function applyRealtimeEvent(currentValue, event) {
+        if (!event || typeof event.path !== 'string') return cloneJson(currentValue) ?? {}
+        if (event.path === '/') {
+          return event.type === 'patch'
+            ? mergePatch(cloneJson(currentValue) ?? {}, event.data)
+            : cloneJson(event.data) ?? {}
+        }
+
+        const nextValue = cloneJson(currentValue) ?? {}
+        const parts = event.path.split('/').filter(Boolean)
+        let target = nextValue
+
+        for (let index = 0; index < parts.length - 1; index += 1) {
+          const part = parts[index]
+          if (!target[part] || typeof target[part] !== 'object') target[part] = {}
+          target = target[part]
+        }
+
+        const finalPart = parts.at(-1)
+        if (event.data === null) delete target[finalPart]
+        else if (event.type === 'patch') target[finalPart] = mergePatch(target[finalPart], event.data)
+        else target[finalPart] = cloneJson(event.data)
+        return nextValue
+      }
+
+      export function parseRoomId(hash) {
+        const roomId = new URLSearchParams(String(hash).replace(/^#/, '')).get('room')
+        return roomId && ROOM_ID_PATTERN.test(roomId) ? roomId : null
+      }
+
+      export function buildShareUrl(currentUrl, roomId, databaseUrl) {
+        const url = new URL(currentUrl)
+        url.search = ''
+        if (databaseUrl) url.searchParams.set('db', databaseUrl)
+        url.hash = `room=${roomId}`
+        return url.toString()
+      }
+
+      export function buildRoom(title, names, createdAt = Date.now()) {
+        return {
+          meta: { title, createdAt, schemaVersion: 1 },
+          members: Object.fromEntries(
+            names.map((name, index) => [`m${index + 1}`, { name, order: index + 1 }]),
+          ),
+        }
+      }
+
+      export function moveMonth(year, monthIndex, offset) {
+        const date = new Date(year, monthIndex + offset, 1)
+        return { year: date.getFullYear(), monthIndex: date.getMonth() }
+      }
+
+      export function createSubscriptionGuard() {
+        let currentGeneration = 0
+        return {
+          begin() { return ++currentGeneration },
+          isCurrent(generation) { return generation === currentGeneration },
+        }
+      }
+
+      export function firebaseEndpoint(databaseUrl, pathParts = []) {
+        const base = String(databaseUrl).replace(/\/$/, '')
+        const encodedPath = pathParts.map((part) => encodeURIComponent(String(part))).join('/')
+        return `${base}/${encodedPath}.json`
+      }
+
+      export function parseEventStreamBlock(block) {
+        const lines = String(block).split(/\r?\n/)
+        const eventLine = lines.find((line) => line.startsWith('event:'))
+        const dataLines = lines
+          .filter((line) => line.startsWith('data:'))
+          .map((line) => line.slice(5).trimStart())
+        if (!eventLine || dataLines.length === 0) return null
+        try {
+          return {
+            type: eventLine.slice(6).trim(),
+            payload: JSON.parse(dataLines.join('\n')),
+          }
+        } catch {
+          return null
+        }
+      }
+
+      function createElement(tagName, className, text) {
+        const element = document.createElement(tagName)
+        if (className) element.className = className
+        if (text !== undefined) element.textContent = text
+        return element
+      }
+
+      function announce(message) {
+        const announcer = document.querySelector('#announcer')
+        if (!announcer) return
+        announcer.textContent = ''
+        requestAnimationFrame(() => { announcer.textContent = message })
+      }
+
+      let toastTimer
+      function showToast(message) {
+        document.querySelector('.toast')?.remove()
+        const toast = createElement('div', 'toast', message)
+        toast.setAttribute('role', 'status')
+        document.body.append(toast)
+        clearTimeout(toastTimer)
+        toastTimer = setTimeout(() => toast.remove(), 3200)
+        announce(message)
+      }
+
+      function createRoomId() {
+        if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID()
+        const bytes = new Uint8Array(16)
+        globalThis.crypto.getRandomValues(bytes)
+        bytes[6] = (bytes[6] & 0x0f) | 0x40
+        bytes[8] = (bytes[8] & 0x3f) | 0x80
+        const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('')
+        return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
+      }
+
+      function localRoomKey(roomId) {
+        return `tiny-schedule:room:${roomId}`
+      }
+
+      function createLocalRepository() {
+        const readRoom = (roomId) => {
+          try {
+            return JSON.parse(localStorage.getItem(localRoomKey(roomId)))
+          } catch {
+            return null
+          }
+        }
+
+        const writeRoom = (roomId, room) => {
+          localStorage.setItem(localRoomKey(roomId), JSON.stringify(room))
+        }
+
+        return {
+          mode: 'local',
+          databaseUrl: null,
+          async createRoom(roomId, room) {
+            writeRoom(roomId, { ...room, schedules: {} })
+          },
+          async getRoom(roomId) {
+            const room = readRoom(roomId)
+            return room?.meta && room?.members ? { meta: room.meta, members: room.members } : null
+          },
+          subscribeMonth(roomId, month, handlers) {
+            let channel
+            const emit = () => handlers.onValue(readRoom(roomId)?.schedules?.[month] ?? {})
+            const storageHandler = (event) => {
+              if (event.key === localRoomKey(roomId)) emit()
+            }
+            window.addEventListener('storage', storageHandler)
+            if ('BroadcastChannel' in window) {
+              channel = new BroadcastChannel(`tiny-schedule:${roomId}`)
+              channel.addEventListener('message', emit)
+            }
+            handlers.onConnection('local')
+            emit()
+            return () => {
+              window.removeEventListener('storage', storageHandler)
+              channel?.close()
+            }
+          },
+          async setSchedule(roomId, month, date, memberId, value) {
+            const room = readRoom(roomId)
+            if (!room) throw new Error('Room not found')
+            room.schedules ??= {}
+            room.schedules[month] ??= {}
+            room.schedules[month][date] ??= {}
+            const schedule = serializeMemberSchedule(value)
+            if (schedule === null) delete room.schedules[month][date][memberId]
+            else room.schedules[month][date][memberId] = schedule
+            if (Object.keys(room.schedules[month][date]).length === 0) delete room.schedules[month][date]
+            writeRoom(roomId, room)
+            if ('BroadcastChannel' in window) {
+              const channel = new BroadcastChannel(`tiny-schedule:${roomId}`)
+              channel.postMessage({ type: 'changed' })
+              channel.close()
+            }
+          },
+        }
+      }
+
+      function createFirebaseRepository(databaseUrl) {
+        const request = async (pathParts, options = {}) => {
+          const response = await fetch(firebaseEndpoint(databaseUrl, pathParts), {
+            ...options,
+            headers: { 'Content-Type': 'application/json', ...options.headers },
+          })
+          if (!response.ok) throw new Error(`Firebase request failed: ${response.status}`)
+          return response.status === 204 ? null : response.json()
+        }
+
+        return {
+          mode: 'online',
+          databaseUrl,
+          async createRoom(roomId, room) {
+            await request(['rooms', roomId], { method: 'PUT', body: JSON.stringify(room) })
+          },
+          async getRoom(roomId) {
+            const room = await request(['rooms', roomId])
+            return room?.meta && room?.members ? { meta: room.meta, members: room.members } : null
+          },
+          subscribeMonth(roomId, month, handlers) {
+            let currentValue = {}
+            const stream = new EventSource(firebaseEndpoint(databaseUrl, ['rooms', roomId, 'schedules', month]))
+            stream.onopen = () => handlers.onConnection('online')
+            stream.onerror = () => handlers.onConnection('offline')
+
+            const receive = (type) => (event) => {
+              try {
+                const payload = JSON.parse(event.data)
+                currentValue = applyRealtimeEvent(currentValue, { ...payload, type })
+                handlers.onValue(currentValue)
+              } catch (error) {
+                handlers.onError(error instanceof Error ? error : new Error(String(error)))
+              }
+            }
+            stream.addEventListener('put', receive('put'))
+            stream.addEventListener('patch', receive('patch'))
+            stream.addEventListener('cancel', () => handlers.onError(new Error('Firebase access denied')))
+            stream.addEventListener('auth_revoked', () => handlers.onError(new Error('Firebase access revoked')))
+            return () => stream.close()
+          },
+          async setSchedule(roomId, month, date, memberId, value) {
+            const path = ['rooms', roomId, 'schedules', month, date, memberId]
+            const schedule = serializeMemberSchedule(value)
+            if (schedule === null) await request(path, { method: 'DELETE' })
+            else await request(path, { method: 'PUT', body: JSON.stringify(schedule) })
+          },
+        }
+      }
+
+      export async function completeRoomCreation({
+        repository,
+        roomId,
+        room,
+        currentUrl,
+        replaceUrl,
+        openCalendar,
+      }) {
+        await repository.createRoom(roomId, room)
+        const url = buildShareUrl(currentUrl, roomId, repository.databaseUrl)
+        replaceUrl(url)
+        openCalendar({ roomId, room, repository })
+        return url
+      }
+
+      export function returnToCreation({ currentUrl, replaceUrl, openCreate }) {
+        const url = new URL(currentUrl)
+        url.hash = ''
+        const nextUrl = url.toString()
+        replaceUrl(nextUrl)
+        openCreate()
+        return nextUrl
+      }
+
+      function openCreateScreen(root) {
+        const initialDatabaseUrl = resolveDatabaseUrl({
+          queryValue: new URL(location.href).searchParams.get('db'),
+          metaValue: document.querySelector('meta[name="default-database-url"]')?.content,
+          rememberedValue: localStorage.getItem('tiny-schedule:database-url'),
+        })
+        renderCreateView(root, initialDatabaseUrl ?? '')
+      }
+
+      function renderStatePage(root, { symbol = '!', title, message, retry, createNew = true }) {
+        root.innerHTML = `
+          <section class="app-shell state-page">
+            <div class="state-content">
+              <div class="state-mark" aria-hidden="true"></div>
+              <h1></h1>
+              <p></p>
+              <div class="state-actions"></div>
+            </div>
+          </section>`
+        root.querySelector('.state-mark').textContent = symbol
+        root.querySelector('h1').textContent = title
+        root.querySelector('p').textContent = message
+        const actions = root.querySelector('.state-actions')
+        if (retry) {
+          const retryButton = createElement('button', 'small-button', '다시 시도')
+          retryButton.type = 'button'
+          retryButton.addEventListener('click', retry)
+          actions.append(retryButton)
+        }
+        if (createNew) {
+          const createButton = createElement('button', 'small-button', '새 일정판 만들기')
+          createButton.type = 'button'
+          createButton.addEventListener('click', () => {
+            returnToCreation({
+              currentUrl: location.href,
+              replaceUrl: (url) => history.replaceState(null, '', url),
+              openCreate: () => openCreateScreen(root),
+            })
+          })
+          actions.append(createButton)
+        }
+      }
+
+      function renderCreateView(root, initialDatabaseUrl = '') {
+        root.innerHTML = `
+          <section class="app-shell create-page">
+            <header class="create-intro">
+              <p class="eyebrow">한 달만, 필요한 것만</p>
+              <h1>우리 팀의 일정을 한눈에</h1>
+              <p>이름을 고르고 날짜를 누르면 끝. 재택·휴가·교육과 기타 일정을 로그인 없이 함께 씁니다.</p>
+            </header>
+            <form class="create-form" novalidate>
+              <section class="form-section">
+                <div class="section-heading"><h2>일정판 이름</h2></div>
+                <div class="field">
+                  <label for="team-title">팀 이름</label>
+                  <input id="team-title" name="title" maxlength="30" autocomplete="organization" placeholder="예: 품질팀">
+                  <p class="field-error" id="title-error"></p>
+                </div>
+              </section>
+              <section class="form-section">
+                <div class="section-heading">
+                  <h2>함께할 사람</h2>
+                  <button class="small-button" id="add-member" type="button">＋ 이름 추가</button>
+                </div>
+                <div id="member-fields"></div>
+                <p class="form-message" id="member-form-error"></p>
+              </section>
+              <section class="form-section">
+                <div class="section-heading"><h2>저장 방식</h2></div>
+                <div class="connection-switch" role="group" aria-label="저장 방식 선택">
+                  <button type="button" data-mode="local">이 기기에서 체험</button>
+                  <button type="button" data-mode="online">온라인 공동 사용</button>
+                </div>
+                <div class="field database-field" hidden>
+                  <label for="database-url">Firebase Database URL</label>
+                  <input id="database-url" name="databaseUrl" inputmode="url" autocomplete="url" placeholder="https://프로젝트.firebasedatabase.app">
+                  <p class="field-hint">Firebase Realtime Database 주소만 입력합니다.</p>
+                  <p class="field-error" id="database-error"></p>
+                </div>
+                <p class="privacy-note">팀 이름, 표시 이름과 근무 일정만 저장하세요. 온라인 링크를 아는 사람은 모든 일정을 수정할 수 있습니다.</p>
+              </section>
+              <p class="form-message" id="create-error" role="alert"></p>
+              <button class="primary-button" type="submit">일정판 만들기</button>
+            </form>
+          </section>`
+
+        const form = root.querySelector('form')
+        const titleInput = root.querySelector('#team-title')
+        const memberFields = root.querySelector('#member-fields')
+        const addMemberButton = root.querySelector('#add-member')
+        const databaseField = root.querySelector('.database-field')
+        const databaseInput = root.querySelector('#database-url')
+        const modeButtons = Array.from(root.querySelectorAll('[data-mode]'))
+        const submitButton = root.querySelector('[type="submit"]')
+        let names = ['', '']
+        let mode = initialDatabaseUrl ? 'online' : 'local'
+        databaseInput.value = initialDatabaseUrl
+
+        const setMode = (nextMode) => {
+          mode = nextMode
+          modeButtons.forEach((button) => {
+            const active = button.dataset.mode === mode
+            button.classList.toggle('active', active)
+            button.setAttribute('aria-pressed', String(active))
+          })
+          databaseField.hidden = mode !== 'online'
+        }
+
+        const renderMemberFields = () => {
+          memberFields.replaceChildren()
+          names.forEach((name, index) => {
+            const row = createElement('div', `member-row${index < 2 ? ' required' : ''}`)
+            const field = createElement('div', 'field')
+            const inputId = `member-${index + 1}`
+            const label = createElement('label', '', `이름 ${index + 1}`)
+            label.htmlFor = inputId
+            const input = createElement('input')
+            input.id = inputId
+            input.name = 'member'
+            input.maxLength = 12
+            input.autocomplete = 'off'
+            input.placeholder = index === 0 ? '예: 민지' : '이름 입력'
+            input.value = name
+            input.addEventListener('input', () => { names[index] = input.value })
+            const error = createElement('p', 'field-error')
+            error.id = `${inputId}-error`
+            field.append(label, input, error)
+            row.append(field)
+            if (index >= 2) {
+              const remove = createElement('button', 'remove-button', '×')
+              remove.type = 'button'
+              remove.title = `${index + 1}번째 이름 삭제`
+              remove.setAttribute('aria-label', `${index + 1}번째 이름 삭제`)
+              remove.addEventListener('click', () => {
+                names.splice(index, 1)
+                renderMemberFields()
+              })
+              row.append(remove)
+            }
+            memberFields.append(row)
+          })
+          addMemberButton.disabled = names.length >= 6
+        }
+
+        addMemberButton.addEventListener('click', () => {
+          if (names.length >= 6) return
+          names.push('')
+          renderMemberFields()
+          root.querySelector(`#member-${names.length}`)?.focus()
+        })
+        modeButtons.forEach((button) => button.addEventListener('click', () => setMode(button.dataset.mode)))
+
+        form.addEventListener('submit', async (event) => {
+          event.preventDefault()
+          root.querySelectorAll('.field-error, .form-message').forEach((element) => { element.textContent = '' })
+          root.querySelectorAll('[aria-invalid="true"]').forEach((element) => element.removeAttribute('aria-invalid'))
+          const result = validateRoomDraft({ title: titleInput.value, names })
+          if (!result.ok) {
+            if (result.fieldErrors.title) {
+              root.querySelector('#title-error').textContent = result.fieldErrors.title
+              titleInput.setAttribute('aria-invalid', 'true')
+            }
+            Object.entries(result.fieldErrors.names ?? {}).forEach(([index, message]) => {
+              const input = root.querySelector(`#member-${Number(index) + 1}`)
+              input?.setAttribute('aria-invalid', 'true')
+              root.querySelector(`#member-${Number(index) + 1}-error`).textContent = message
+            })
+            root.querySelector('#member-form-error').textContent = result.fieldErrors.form ?? ''
+            root.querySelector('[aria-invalid="true"]')?.focus()
+            return
+          }
+
+          let databaseUrl = null
+          if (mode === 'online') {
+            databaseUrl = normalizeDatabaseUrl(databaseInput.value)
+            if (!databaseUrl) {
+              databaseInput.setAttribute('aria-invalid', 'true')
+              root.querySelector('#database-error').textContent = '올바른 Firebase Realtime Database HTTPS 주소를 입력해 주세요.'
+              databaseInput.focus()
+              return
+            }
+          }
+
+          submitButton.disabled = true
+          submitButton.textContent = '만드는 중...'
+          try {
+            const roomId = createRoomId()
+            const repository = databaseUrl ? createFirebaseRepository(databaseUrl) : createLocalRepository()
+            const room = buildRoom(result.value.title, result.value.names)
+            if (databaseUrl) localStorage.setItem('tiny-schedule:database-url', databaseUrl)
+            await completeRoomCreation({
+              repository,
+              roomId,
+              room,
+              currentUrl: location.href,
+              replaceUrl: (url) => history.replaceState(null, '', url),
+              openCalendar: (context) => renderCalendarView(root, context),
+            })
+          } catch {
+            submitButton.disabled = false
+            submitButton.textContent = '일정판 만들기'
+            root.querySelector('#create-error').textContent = '일정판을 만들지 못했어요. 연결 주소와 Firebase 규칙을 확인해 주세요.'
+          }
+        })
+
+        setMode(mode)
+        renderMemberFields()
+      }
+
+      function statusLabel(status) {
+        return STATUS_LABELS[status] ?? (status === 'custom' ? '기타' : '없음')
+      }
+
+      function orderedMembers(members) {
+        return Object.entries(members).sort(([, left], [, right]) => left.order - right.order)
+      }
+
+      async function shareUrl(title, url) {
+        if (navigator.share) {
+          try {
+            await navigator.share({ title, text: `${title} 재택·휴가·교육 일정판`, url })
+            return 'shared'
+          } catch (error) {
+            if (error?.name === 'AbortError') return 'cancelled'
+          }
+        }
+        try {
+          await navigator.clipboard.writeText(url)
+          return 'copied'
+        } catch {
+          return 'manual'
+        }
+      }
+
+      function showManualShareDialog(url, localMode) {
+        let dialog = document.querySelector('#share-dialog')
+        if (!dialog) {
+          dialog = createElement('dialog')
+          dialog.id = 'share-dialog'
+          dialog.innerHTML = `
+            <div class="dialog-content">
+              <h2></h2>
+              <p></p>
+              <input class="manual-link" readonly aria-label="공유 링크">
+              <div class="dialog-actions">
+                <button class="text-button" type="button" data-close>닫기</button>
+                <button class="text-button" type="button" data-copy>수동 복사</button>
+              </div>
+            </div>`
+          document.body.append(dialog)
+          dialog.querySelector('[data-close]').addEventListener('click', () => dialog.close())
+          dialog.querySelector('[data-copy]').addEventListener('click', () => {
+            const input = dialog.querySelector('.manual-link')
+            input.select()
+            document.execCommand('copy')
+            showToast('링크를 복사했어요.')
+          })
+        }
+        dialog.querySelector('h2').textContent = localMode ? '현재 기기 전용 일정판이에요' : '링크를 직접 복사해 주세요'
+        dialog.querySelector('p').textContent = localMode
+          ? '다른 사람과 함께 쓰려면 새 일정판에서 온라인 공동 사용을 선택하고 Firebase 주소를 연결해 주세요.'
+          : '자동 복사가 차단되어 링크를 선택해 두었습니다.'
+        const input = dialog.querySelector('.manual-link')
+        input.value = url
+        dialog.showModal()
+        input.select()
+      }
+
+      function renderCalendarView(root, { roomId, room, repository }) {
+        root.innerHTML = `
+          <section class="app-shell calendar-page">
+            <header class="topbar">
+              <div class="brand">
+                <span class="brand-mark" aria-hidden="true">31</span>
+                <div class="brand-copy">
+                  <strong id="team-name"></strong>
+                  <small><span class="connection-state">연결 중</span></small>
+                </div>
+              </div>
+              <div class="toolbar">
+                <button class="icon-button" type="button" id="new-room" title="새 일정판" aria-label="새 일정판 만들기">＋</button>
+                <button class="icon-button" type="button" id="share-room" title="공유" aria-label="일정판 공유하기">↗</button>
+              </div>
+            </header>
+            <nav class="month-nav" aria-label="월 선택">
+              <button class="month-button" type="button" id="previous-month" aria-label="이전 달">‹</button>
+              <h1 class="month-title"></h1>
+              <button class="month-button" type="button" id="next-month" aria-label="다음 달">›</button>
+            </nav>
+            <div class="member-picker" aria-label="내 이름 선택"></div>
+            <section class="calendar-wrap" aria-label="월간 일정">
+              <div class="weekdays" aria-hidden="true">
+                <span class="weekday">일</span><span class="weekday">월</span><span class="weekday">화</span>
+                <span class="weekday">수</span><span class="weekday">목</span><span class="weekday">금</span><span class="weekday">토</span>
+              </div>
+              <div class="calendar-grid" role="grid"></div>
+            </section>
+            <section class="status-editor" aria-label="선택 날짜 일정 변경">
+              <div class="selected-day-head">
+                <h2 class="selected-date"></h2>
+                <span class="editor-person"></span>
+              </div>
+              <div class="day-summary" aria-label="선택 날짜 전체 일정"></div>
+              <div class="status-buttons" role="group" aria-label="내 일정 상태">
+                <button class="status-button" type="button" data-status="none">없음</button>
+                <button class="status-button home" type="button" data-status="home">⌂ 재택</button>
+                <button class="status-button vacation" type="button" data-status="vacation">◇ 휴가</button>
+                <button class="status-button training" type="button" data-status="training">▤ 교육</button>
+                <button class="status-button custom" type="button" data-status="custom" aria-expanded="false" aria-controls="custom-editor">＋ 기타</button>
+              </div>
+              <div class="custom-editor" id="custom-editor" hidden>
+                <label for="custom-schedule-input">기타 일정</label>
+                <input id="custom-schedule-input" maxlength="12" autocomplete="off" placeholder="예: 출장, 외근" aria-describedby="custom-schedule-error">
+                <p class="custom-error" id="custom-schedule-error"></p>
+                <div class="custom-actions">
+                  <button class="text-button" type="button" data-custom-action="close">닫기</button>
+                  <button class="text-button" type="button" data-custom-action="delete">삭제</button>
+                  <button class="text-button" type="button" data-custom-action="save">저장</button>
+                </div>
+              </div>
+            </section>
+          </section>`
+
+        root.querySelector('#team-name').textContent = room.meta.title
+        const connectionState = root.querySelector('.connection-state')
+        const monthTitle = root.querySelector('.month-title')
+        const memberPicker = root.querySelector('.member-picker')
+        const calendarGrid = root.querySelector('.calendar-grid')
+        const selectedDateElement = root.querySelector('.selected-date')
+        const editorPerson = root.querySelector('.editor-person')
+        const daySummary = root.querySelector('.day-summary')
+        const statusButtons = Array.from(root.querySelectorAll('[data-status]'))
+        const customButton = root.querySelector('[data-status="custom"]')
+        const customEditor = root.querySelector('#custom-editor')
+        const customInput = root.querySelector('#custom-schedule-input')
+        const customErrorElement = root.querySelector('#custom-schedule-error')
+        const customSaveButton = root.querySelector('[data-custom-action="save"]')
+        const customDeleteButton = root.querySelector('[data-custom-action="delete"]')
+        const customCloseButton = root.querySelector('[data-custom-action="close"]')
+        const today = new Date()
+        const storageKey = `tiny-schedule:selected-member:${roomId}`
+        const storedMemberId = localStorage.getItem(storageKey)
+        let selectedMemberId = room.members[storedMemberId] ? storedMemberId : null
+        let year = today.getFullYear()
+        let monthIndex = today.getMonth()
+        let selectedDate = dateKey(year, monthIndex, today.getDate())
+        let schedules = {}
+        let unsubscribeMonth = () => {}
+        let saving = false
+        let customPanelOpen = false
+        let customDraft = ''
+        let customError = ''
+        const subscriptionGuard = createSubscriptionGuard()
+
+        const resetCustomEditor = () => {
+          customPanelOpen = false
+          customDraft = ''
+          customError = ''
+        }
+
+        const setConnectionState = (state) => {
+          connectionState.className = `connection-state ${state}`
+          connectionState.textContent = state === 'online' ? '온라인' : state === 'local' ? '내 기기' : '오프라인'
+        }
+
+        const renderMembers = () => {
+          memberPicker.replaceChildren()
+          orderedMembers(room.members).forEach(([memberId, member]) => {
+            const button = createElement('button', 'member-button')
+            button.type = 'button'
+            button.setAttribute('aria-pressed', String(selectedMemberId === memberId))
+            button.setAttribute('aria-label', `${member.name} 선택`)
+            const dot = createElement('span', 'member-dot')
+            dot.setAttribute('aria-hidden', 'true')
+            button.append(dot, document.createTextNode(member.name))
+            button.addEventListener('click', () => {
+              selectedMemberId = memberId
+              localStorage.setItem(storageKey, memberId)
+              resetCustomEditor()
+              renderMembers()
+              renderEditor()
+              announce(`${member.name}님을 선택했어요.`)
+            })
+            memberPicker.append(button)
+          })
+        }
+
+        const renderGrid = () => {
+          monthTitle.textContent = `${year}년 ${monthIndex + 1}월`
+          calendarGrid.replaceChildren()
+          buildMonthGrid(year, monthIndex, today).forEach((cell) => {
+            if (!cell) {
+              const emptyCell = createElement('span', 'day-cell empty')
+              emptyCell.setAttribute('role', 'gridcell')
+              emptyCell.setAttribute('aria-hidden', 'true')
+              calendarGrid.append(emptyCell)
+              return
+            }
+            const button = createElement('button', 'day-cell')
+            button.type = 'button'
+            button.setAttribute('role', 'gridcell')
+            button.setAttribute('aria-label', `${monthIndex + 1}월 ${cell.day}일 일정 보기`)
+            if (cell.isSunday) button.classList.add('sunday')
+            if (cell.isToday) button.classList.add('today')
+            if (cell.key === selectedDate) button.classList.add('selected')
+            button.append(createElement('span', 'day-number', String(cell.day)))
+            const summary = summarizeDay(schedules[cell.key], room.members)
+            summary.badges.forEach((badge) => {
+              const badgeClass = FIXED_STATUSES.find((status) => badge.schedule[status])
+                ?? (badge.schedule.custom ? 'custom' : '')
+              button.append(createElement('span', `schedule-badge ${badgeClass}`, `${badge.name} ${badge.label}`))
+            })
+            if (summary.hiddenCount > 0) button.append(createElement('span', 'more-count', `+${summary.hiddenCount}`))
+            button.addEventListener('click', () => {
+              selectedDate = cell.key
+              resetCustomEditor()
+              renderGrid()
+              renderEditor()
+            })
+            calendarGrid.append(button)
+          })
+        }
+
+        const renderEditor = () => {
+          const day = Number(selectedDate.slice(-2))
+          selectedDateElement.textContent = `${monthIndex + 1}월 ${day}일`
+          editorPerson.textContent = selectedMemberId
+            ? `${room.members[selectedMemberId].name}의 일정`
+            : '먼저 내 이름을 선택하세요'
+          daySummary.replaceChildren()
+          const selectedSchedules = schedules[selectedDate] ?? {}
+          orderedMembers(room.members).forEach(([memberId, member]) => {
+            const schedule = normalizeMemberSchedule(selectedSchedules[memberId])
+            if (isEmptyMemberSchedule(schedule)) return
+            const person = createElement('span', 'day-summary-person')
+            person.append(createElement('span', 'day-summary-name', member.name))
+            FIXED_STATUSES.forEach((status) => {
+              if (schedule[status]) {
+                person.append(createElement('span', `day-summary-item ${status}`, statusLabel(status)))
+              }
+            })
+            if (schedule.custom) {
+              person.append(createElement('span', 'day-summary-item custom', schedule.custom))
+            }
+            daySummary.append(person)
+          })
+          const activeSchedule = selectedMemberId
+            ? normalizeMemberSchedule(selectedSchedules[selectedMemberId])
+            : {}
+          statusButtons.forEach((button) => {
+            button.disabled = !selectedMemberId || saving
+            const status = button.dataset.status
+            const pressed = status === 'none'
+              ? isEmptyMemberSchedule(activeSchedule)
+              : status === 'custom'
+                ? Boolean(activeSchedule.custom)
+                : Boolean(activeSchedule[status])
+            button.setAttribute('aria-pressed', String(pressed))
+          })
+          customButton.setAttribute('aria-expanded', String(customPanelOpen))
+          customEditor.hidden = !customPanelOpen
+          customInput.value = customDraft
+          customInput.disabled = saving
+          customInput.setAttribute('aria-invalid', String(Boolean(customError)))
+          customErrorElement.textContent = customError
+          customSaveButton.disabled = !selectedMemberId || saving
+          customDeleteButton.disabled = !selectedMemberId || saving || !activeSchedule.custom
+          customCloseButton.disabled = saving
+        }
+
+        const persistMemberSchedule = async (nextValue, successMessage) => {
+          if (!selectedMemberId || saving) return false
+          const memberId = selectedMemberId
+          const date = selectedDate
+          const month = monthKey(year, monthIndex)
+          const previousSchedules = cloneJson(schedules)
+          const schedule = serializeMemberSchedule(nextValue)
+          schedules[date] ??= {}
+          if (schedule === null) delete schedules[date][memberId]
+          else schedules[date][memberId] = schedule
+          if (Object.keys(schedules[date]).length === 0) delete schedules[date]
+          saving = true
+          renderGrid()
+          renderEditor()
+          try {
+            await repository.setSchedule(roomId, month, date, memberId, schedule)
+            showToast(successMessage)
+            return true
+          } catch {
+            schedules = previousSchedules
+            showToast('저장하지 못했어요. 다시 눌러 주세요.')
+            return false
+          } finally {
+            saving = false
+            renderGrid()
+            renderEditor()
+          }
+        }
+
+        const subscribe = () => {
+          const generation = subscriptionGuard.begin()
+          unsubscribeMonth()
+          schedules = {}
+          renderGrid()
+          renderEditor()
+          const key = monthKey(year, monthIndex)
+          unsubscribeMonth = repository.subscribeMonth(roomId, key, {
+            onValue(value) {
+              if (!subscriptionGuard.isCurrent(generation)) return
+              schedules = value ?? {}
+              renderGrid()
+              renderEditor()
+            },
+            onConnection(state) {
+              if (subscriptionGuard.isCurrent(generation)) setConnectionState(state)
+            },
+            onError() {
+              if (!subscriptionGuard.isCurrent(generation)) return
+              setConnectionState('offline')
+              showToast('실시간 연결을 확인해 주세요.')
+            },
+          })
+        }
+
+        const changeMonth = (offset) => {
+          const next = moveMonth(year, monthIndex, offset)
+          year = next.year
+          monthIndex = next.monthIndex
+          const isCurrentMonth = year === today.getFullYear() && monthIndex === today.getMonth()
+          selectedDate = dateKey(year, monthIndex, isCurrentMonth ? today.getDate() : 1)
+          resetCustomEditor()
+          subscribe()
+        }
+
+        statusButtons.forEach((button) => {
+          button.addEventListener('click', async () => {
+            if (!selectedMemberId || saving) return
+            const status = button.dataset.status
+            if (status === 'custom') {
+              if (customPanelOpen) {
+                resetCustomEditor()
+                renderEditor()
+                customButton.focus()
+              } else {
+                const current = normalizeMemberSchedule(schedules[selectedDate]?.[selectedMemberId])
+                customPanelOpen = true
+                customDraft = current.custom ?? ''
+                customError = ''
+                renderEditor()
+                requestAnimationFrame(() => customInput.focus())
+              }
+              return
+            }
+            const current = normalizeMemberSchedule(schedules[selectedDate]?.[selectedMemberId])
+            const nextValue = status === 'none' ? {} : toggleFixedStatus(current, status)
+            const message = status === 'none'
+              ? '일정을 모두 지웠어요.'
+              : `${statusLabel(status)} 일정을 변경했어요.`
+            await persistMemberSchedule(nextValue, message)
+          })
+        })
+
+        customInput.addEventListener('input', () => {
+          customDraft = customInput.value
+          customError = ''
+          customInput.removeAttribute('aria-invalid')
+          customErrorElement.textContent = ''
+        })
+
+        customSaveButton.addEventListener('click', async () => {
+          if (!selectedMemberId || saving) return
+          const current = normalizeMemberSchedule(schedules[selectedDate]?.[selectedMemberId])
+          let nextValue
+          try {
+            nextValue = setCustomSchedule(current, customDraft)
+          } catch (error) {
+            customError = error instanceof Error ? error.message : '기타 일정을 입력해 주세요.'
+            renderEditor()
+            customInput.focus()
+            return
+          }
+          if (await persistMemberSchedule(nextValue, '기타 일정을 저장했어요.')) {
+            resetCustomEditor()
+            renderEditor()
+            customButton.focus()
+          }
+        })
+
+        customDeleteButton.addEventListener('click', async () => {
+          if (!selectedMemberId || saving) return
+          const current = normalizeMemberSchedule(schedules[selectedDate]?.[selectedMemberId])
+          if (await persistMemberSchedule(clearCustomSchedule(current), '기타 일정을 삭제했어요.')) {
+            resetCustomEditor()
+            renderEditor()
+            customButton.focus()
+          }
+        })
+
+        customCloseButton.addEventListener('click', () => {
+          if (saving) return
+          resetCustomEditor()
+          renderEditor()
+          customButton.focus()
+        })
+
+        root.querySelector('#previous-month').addEventListener('click', () => changeMonth(-1))
+        root.querySelector('#next-month').addEventListener('click', () => changeMonth(1))
+        root.querySelector('#new-room').addEventListener('click', () => {
+          subscriptionGuard.begin()
+          unsubscribeMonth()
+          returnToCreation({
+            currentUrl: location.href,
+            replaceUrl: (url) => history.replaceState(null, '', url),
+            openCreate: () => openCreateScreen(root),
+          })
+        })
+        root.querySelector('#share-room').addEventListener('click', async () => {
+          const url = buildShareUrl(location.href, roomId, repository.databaseUrl)
+          if (repository.mode === 'local') {
+            showManualShareDialog(url, true)
+            return
+          }
+          const result = await shareUrl(`${room.meta.title} 일정`, url)
+          if (result === 'copied') showToast('공유 링크를 복사했어요.')
+          if (result === 'manual') showManualShareDialog(url, false)
+        })
+
+        renderMembers()
+        renderGrid()
+        renderEditor()
+        subscribe()
+        return () => unsubscribeMonth()
+      }
+
+      async function boot() {
+        const root = document.querySelector('#app')
+        const search = new URLSearchParams(location.search)
+        const rawDatabaseUrl = search.get('db')
+        const databaseUrl = resolveDatabaseUrl({
+          queryValue: rawDatabaseUrl,
+          metaValue: document.querySelector('meta[name="default-database-url"]')?.content,
+          rememberedValue: localStorage.getItem('tiny-schedule:database-url'),
+        })
+        const roomId = parseRoomId(location.hash)
+
+        if (hasInvalidExplicitDatabaseUrl(rawDatabaseUrl)) {
+          renderStatePage(root, {
+            title: '연결 주소가 올바르지 않아요',
+            message: '공유 링크의 Firebase Database URL을 확인해 주세요.',
+          })
+          return
+        }
+
+        if (!roomId) {
+          renderCreateView(root, databaseUrl ?? '')
+          return
+        }
+
+        const repository = databaseUrl ? createFirebaseRepository(databaseUrl) : createLocalRepository()
+        renderStatePage(root, {
+          symbol: '…',
+          title: '일정판을 불러오는 중',
+          message: '잠시만 기다려 주세요.',
+          createNew: false,
+        })
+        try {
+          const room = await repository.getRoom(roomId)
+          if (!room) {
+            renderStatePage(root, {
+              title: '일정판을 찾을 수 없어요',
+              message: repository.mode === 'local'
+                ? '이 기기에 저장되지 않았거나 삭제된 일정판이에요.'
+                : '링크가 잘렸거나 일정판이 삭제되었어요.',
+            })
+            return
+          }
+          renderCalendarView(root, { roomId, room, repository })
+        } catch {
+          renderStatePage(root, {
+            title: '일정판을 불러오지 못했어요',
+            message: '인터넷 연결과 Firebase Database 규칙을 확인해 주세요.',
+            retry: () => location.reload(),
+          })
+        }
+      }
+
+      if (typeof document !== 'undefined' && typeof location !== 'undefined') {
+        boot()
+      }
+    </script>
+  </body>
+</html>
