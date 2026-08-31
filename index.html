@@ -1526,9 +1526,18 @@
 
       function mergePatch(target, patch) {
         const nextTarget = target && typeof target === 'object' ? target : {}
-        Object.entries(patch ?? {}).forEach(([key, value]) => {
-          if (value === null) delete nextTarget[key]
-          else nextTarget[key] = cloneJson(value)
+        Object.entries(patch ?? {}).forEach(([path, value]) => {
+          const parts = path.split('/').filter(Boolean)
+          if (parts.length === 0) return
+          let branch = nextTarget
+          for (let index = 0; index < parts.length - 1; index += 1) {
+            const part = parts[index]
+            if (!branch[part] || typeof branch[part] !== 'object') branch[part] = {}
+            branch = branch[part]
+          }
+          const finalPart = parts.at(-1)
+          if (value === null) delete branch[finalPart]
+          else branch[finalPart] = cloneJson(value)
         })
         return nextTarget
       }
