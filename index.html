@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#f1f5f1">
-    <meta name="default-database-url" content="https://schedule-ca02f-default-rtdb.firebaseio.com">
+    <meta name="default-database-url" content="">
     <title>우리팀 달력</title>
     <style>
       :root {
@@ -2132,7 +2132,7 @@
           }
           if (teamHoliday) {
             holidayDetailList.append(
-              createElement('span', 'holiday-detail public', `팀 휴일 · ${teamHoliday}`),
+              createElement('span', 'holiday-detail public', `회사 휴일 · ${teamHoliday}`),
             )
           }
           if (!publicHoliday && !teamHoliday) {
