@@ -2492,7 +2492,7 @@
           holidayEditButton.textContent = teamHoliday ? '휴일 수정' : '휴일 추가'
           holidayEditButton.setAttribute('aria-expanded', String(holidayPanelOpen))
           holidayEditButton.disabled = holidaySaving
-          holidayDetails.hidden = !holidayPanelOpen
+          holidayDetails.hidden = !holidayPanelOpen && !publicHoliday && !teamHoliday
           holidayEditor.hidden = !holidayPanelOpen
           teamHolidayInput.value = holidayDraft
           teamHolidayInput.disabled = holidaySaving
