@@ -2359,6 +2359,9 @@
           rangeMessage.className = `range-message${rangeError ? ' error' : ''}`
           rangeMessage.textContent = rangeError || `${rangeDates.length}일에 같은 일정을 적용합니다.`
           rangeApplyButton.hidden = !rangeMode
+          rangeApplyButton.textContent = isEmptyMemberSchedule(rangeDraft)
+            ? '기간 일정 삭제'
+            : '기간에 적용'
           rangeApplyButton.disabled = !selectedMemberId || saving || Boolean(rangeError) || rangeDates.length === 0
           const publicHoliday = getPublicHoliday(selectedDate)
           const teamHoliday = normalizeTeamHolidayName(teamHolidays[selectedDate])
@@ -2677,6 +2680,7 @@
               if (Object.keys(schedules[date]).length === 0) delete schedules[date]
             })
             showToast(`${dates.length}일 일정을 저장했어요.`)
+            resetRangeEditor()
           } catch {
             rangeError = '기간 일정을 저장하지 못했어요. 다시 시도해 주세요.'
             showToast(rangeError)
