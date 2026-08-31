@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#f1f5f1">
-    <meta name="default-database-url" content="">
+    <meta name="default-database-url" content="https://schedule-ca02f-default-rtdb.firebaseio.com">
     <title>우리팀 달력</title>
     <style>
       :root {
@@ -521,11 +521,44 @@
       .day-cell.sunday .day-number { color: var(--vacation-ink); }
       .day-cell.today.sunday .day-number { color: #fff; }
 
+      .day-cell.public-holiday .day-number { color: var(--vacation-ink); }
+      .day-cell.today.public-holiday .day-number { color: #fff; }
+
+      .day-heading {
+        display: flex;
+        min-width: 0;
+        height: 21px;
+        align-items: center;
+        gap: 3px;
+      }
+
       .day-number {
-        display: block;
+        display: inline-block;
+        flex: 0 0 auto;
         height: 21px;
         font-size: 10px;
         line-height: 20px;
+      }
+
+      .holiday-label {
+        min-width: 0;
+        overflow: hidden;
+        border-radius: 3px;
+        padding: 1px 3px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 7px;
+        line-height: 13px;
+      }
+
+      .holiday-label.public {
+        color: var(--vacation-ink);
+        background: #ffe5de;
+      }
+
+      .holiday-label.team {
+        color: var(--custom-ink);
+        background: var(--custom-bg);
       }
 
       .schedule-badge {
@@ -647,6 +680,51 @@
         font-size: 10px;
       }
 
+      .holiday-details {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: start;
+        gap: 8px;
+        margin-top: 9px;
+        padding: 8px;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        background: #fff;
+      }
+
+      .holiday-detail-list {
+        display: flex;
+        min-width: 0;
+        flex-wrap: wrap;
+        gap: 5px;
+      }
+
+      .holiday-detail {
+        border-radius: 5px;
+        padding: 4px 7px;
+        font-size: 10px;
+      }
+
+      .holiday-detail.public {
+        color: var(--vacation-ink);
+        background: #ffe5de;
+      }
+
+      .holiday-detail.team {
+        color: var(--custom-ink);
+        background: var(--custom-bg);
+      }
+
+      .holiday-detail.empty {
+        color: var(--muted);
+        background: #f5f7f4;
+      }
+
+      .holiday-edit-button {
+        min-height: 30px;
+        white-space: nowrap;
+      }
+
       .status-buttons {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(68px, 1fr));
@@ -712,6 +790,34 @@
         gap: 6px;
         margin-top: 7px;
       }
+
+      .holiday-editor {
+        margin-top: 8px;
+        border: 1px solid #dfbf49;
+        border-radius: 8px;
+        padding: 11px;
+        background: #fffdf3;
+      }
+
+      .holiday-editor label {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--custom-ink);
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .holiday-editor input {
+        width: 100%;
+        height: 40px;
+        border: 1px solid var(--line-strong);
+        border-radius: 7px;
+        padding: 0 10px;
+        color: var(--ink);
+        background: #fff;
+      }
+
+      .holiday-editor input[aria-invalid="true"] { border-color: var(--danger); }
 
       .toast {
         position: fixed;
@@ -852,6 +958,133 @@
       const ROOM_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
       const FIXED_STATUSES = ['home', 'vacation', 'training']
       const STATUS_LABELS = { home: '재택', vacation: '휴가', training: '교육' }
+      const KOREAN_PUBLIC_HOLIDAYS = Object.freeze({
+        '2025-01-01': '신정',
+        '2025-01-27': '임시공휴일',
+        '2025-01-28': '설날 연휴',
+        '2025-01-29': '설날',
+        '2025-01-30': '설날 연휴',
+        '2025-03-01': '삼일절',
+        '2025-03-03': '삼일절 대체공휴일',
+        '2025-05-01': '근로자의 날',
+        '2025-05-05': '어린이날·부처님오신날',
+        '2025-05-06': '어린이날·부처님오신날 대체공휴일',
+        '2025-06-03': '제21대 대통령선거',
+        '2025-06-06': '현충일',
+        '2025-08-15': '광복절',
+        '2025-10-03': '개천절',
+        '2025-10-05': '추석 연휴',
+        '2025-10-06': '추석',
+        '2025-10-07': '추석 연휴',
+        '2025-10-08': '추석 대체공휴일',
+        '2025-10-09': '한글날',
+        '2025-12-25': '성탄절',
+        '2026-01-01': '신정',
+        '2026-02-16': '설날 연휴',
+        '2026-02-17': '설날',
+        '2026-02-18': '설날 연휴',
+        '2026-03-01': '삼일절',
+        '2026-03-02': '삼일절 대체공휴일',
+        '2026-05-01': '근로자의 날',
+        '2026-05-05': '어린이날',
+        '2026-05-24': '부처님오신날',
+        '2026-05-25': '부처님오신날 대체공휴일',
+        '2026-06-03': '제9회 전국동시지방선거',
+        '2026-06-06': '현충일',
+        '2026-07-17': '제헌절',
+        '2026-08-15': '광복절',
+        '2026-08-17': '광복절 대체공휴일',
+        '2026-09-24': '추석 연휴',
+        '2026-09-25': '추석',
+        '2026-09-26': '추석 연휴',
+        '2026-10-03': '개천절',
+        '2026-10-05': '개천절 대체공휴일',
+        '2026-10-09': '한글날',
+        '2026-12-25': '성탄절',
+        '2027-01-01': '신정',
+        '2027-02-06': '설날 연휴',
+        '2027-02-07': '설날',
+        '2027-02-08': '설날 연휴',
+        '2027-02-09': '설날 대체공휴일',
+        '2027-03-01': '삼일절',
+        '2027-05-01': '근로자의 날',
+        '2027-05-03': '근로자의 날 대체공휴일',
+        '2027-05-05': '어린이날',
+        '2027-05-13': '부처님오신날',
+        '2027-06-06': '현충일',
+        '2027-07-17': '제헌절',
+        '2027-07-19': '제헌절 대체공휴일',
+        '2027-08-15': '광복절',
+        '2027-08-16': '광복절 대체공휴일',
+        '2027-09-14': '추석 연휴',
+        '2027-09-15': '추석',
+        '2027-09-16': '추석 연휴',
+        '2027-10-03': '개천절',
+        '2027-10-04': '개천절 대체공휴일',
+        '2027-10-09': '한글날',
+        '2027-10-11': '한글날 대체공휴일',
+        '2027-12-25': '성탄절',
+        '2027-12-27': '성탄절 대체공휴일',
+        '2028-01-01': '신정',
+        '2028-01-26': '설날 연휴',
+        '2028-01-27': '설날',
+        '2028-01-28': '설날 연휴',
+        '2028-03-01': '삼일절',
+        '2028-04-12': '제23대 국회의원선거',
+        '2028-05-01': '근로자의 날',
+        '2028-05-02': '부처님오신날',
+        '2028-05-05': '어린이날',
+        '2028-06-06': '현충일',
+        '2028-07-17': '제헌절',
+        '2028-08-15': '광복절',
+        '2028-10-02': '추석 연휴',
+        '2028-10-03': '추석·개천절',
+        '2028-10-04': '추석 연휴',
+        '2028-10-05': '추석 대체공휴일',
+        '2028-10-09': '한글날',
+        '2028-12-25': '성탄절',
+        '2029-01-01': '신정',
+        '2029-02-12': '설날 연휴',
+        '2029-02-13': '설날',
+        '2029-02-14': '설날 연휴',
+        '2029-03-01': '삼일절',
+        '2029-05-01': '근로자의 날',
+        '2029-05-05': '어린이날',
+        '2029-05-07': '어린이날 대체공휴일',
+        '2029-05-20': '부처님오신날',
+        '2029-05-21': '부처님오신날 대체공휴일',
+        '2029-06-06': '현충일',
+        '2029-07-17': '제헌절',
+        '2029-08-15': '광복절',
+        '2029-09-21': '추석 연휴',
+        '2029-09-22': '추석',
+        '2029-09-23': '추석 연휴',
+        '2029-09-24': '추석 대체공휴일',
+        '2029-10-03': '개천절',
+        '2029-10-09': '한글날',
+        '2029-12-25': '성탄절',
+        '2030-01-01': '신정',
+        '2030-02-02': '설날 연휴',
+        '2030-02-03': '설날',
+        '2030-02-04': '설날 연휴',
+        '2030-02-05': '설날 대체공휴일',
+        '2030-03-01': '삼일절',
+        '2030-04-03': '대통령선거',
+        '2030-05-01': '근로자의 날',
+        '2030-05-05': '어린이날',
+        '2030-05-06': '어린이날 대체공휴일',
+        '2030-05-09': '부처님오신날',
+        '2030-06-06': '현충일',
+        '2030-06-12': '전국동시지방선거',
+        '2030-07-17': '제헌절',
+        '2030-08-15': '광복절',
+        '2030-09-11': '추석 연휴',
+        '2030-09-12': '추석',
+        '2030-09-13': '추석 연휴',
+        '2030-10-03': '개천절',
+        '2030-10-09': '한글날',
+        '2030-12-25': '성탄절',
+      })
 
       const pad = (value) => String(value).padStart(2, '0')
 
@@ -964,6 +1197,73 @@
       export function serializeMemberSchedule(value) {
         const schedule = normalizeMemberSchedule(value)
         return Object.keys(schedule).length > 0 ? schedule : null
+      }
+
+      export function getPublicHoliday(date) {
+        return KOREAN_PUBLIC_HOLIDAYS[date] ?? null
+      }
+
+      export function getPublicHolidaysForMonth(year, monthIndex) {
+        const prefix = `${monthKey(year, monthIndex)}-`
+        return Object.fromEntries(
+          Object.entries(KOREAN_PUBLIC_HOLIDAYS).filter(([date]) => date.startsWith(prefix)),
+        )
+      }
+
+      export function isSupportedHolidayYear(year) {
+        return Number.isInteger(year) && year >= 2025 && year <= 2030
+      }
+
+      export function combineHolidayLabels(publicHoliday, teamHoliday) {
+        return [publicHoliday, teamHoliday].filter(Boolean).join('·')
+      }
+
+      export function normalizeTeamHolidayName(value) {
+        if (typeof value !== 'string') return null
+        const name = value.trim()
+        return name.length >= 1 && name.length <= 20 ? name : null
+      }
+
+      export function serializeTeamHoliday(value) {
+        return normalizeTeamHolidayName(value)
+      }
+
+      export function applyLocalHolidayChange(room, month, date, value) {
+        const nextRoom = cloneJson(room)
+        if (value === null) {
+          if (!nextRoom.holidays?.[month]) return nextRoom
+          delete nextRoom.holidays[month][date]
+          if (Object.keys(nextRoom.holidays[month]).length === 0) delete nextRoom.holidays[month]
+          if (Object.keys(nextRoom.holidays).length === 0) delete nextRoom.holidays
+          return nextRoom
+        }
+
+        const holidayName = normalizeTeamHolidayName(value)
+        if (!holidayName) throw new RangeError('팀 휴일명은 1~20자로 입력해 주세요.')
+        nextRoom.holidays ??= {}
+        nextRoom.holidays[month] ??= {}
+        nextRoom.holidays[month][date] = holidayName
+        return nextRoom
+      }
+
+      export function holidayPath(roomId, month, date) {
+        const path = ['rooms', roomId, 'holidays', month]
+        if (date) path.push(date)
+        return path
+      }
+
+      export function rollbackTeamHolidayWrite(
+        currentHolidays,
+        date,
+        previousHoliday,
+        revisionAtStart,
+        currentRevision,
+      ) {
+        const nextHolidays = cloneJson(currentHolidays) ?? {}
+        if (revisionAtStart !== currentRevision) return nextHolidays
+        if (previousHoliday === null) delete nextHolidays[date]
+        else nextHolidays[date] = previousHoliday
+        return nextHolidays
       }
 
       export function summarizeDay(daySchedules = {}, members = {}) {
@@ -1083,6 +1383,17 @@
         }
       }
 
+      export function createUnsupportedYearNoticeTracker() {
+        const notifiedYears = new Set()
+        return {
+          shouldNotify(year) {
+            if (isSupportedHolidayYear(year) || notifiedYears.has(year)) return false
+            notifiedYears.add(year)
+            return true
+          },
+        }
+      }
+
       export function firebaseEndpoint(databaseUrl, pathParts = []) {
         const base = String(databaseUrl).replace(/\/$/, '')
         const encodedPath = pathParts.map((part) => encodeURIComponent(String(part))).join('/')
@@ -1186,6 +1497,24 @@
               channel?.close()
             }
           },
+          subscribeHolidays(roomId, month, handlers) {
+            let channel
+            const emit = () => handlers.onValue(readRoom(roomId)?.holidays?.[month] ?? {})
+            const storageHandler = (event) => {
+              if (event.key === localRoomKey(roomId)) emit()
+            }
+            window.addEventListener('storage', storageHandler)
+            if ('BroadcastChannel' in window) {
+              channel = new BroadcastChannel(`tiny-schedule:${roomId}`)
+              channel.addEventListener('message', emit)
+            }
+            handlers.onConnection('local')
+            emit()
+            return () => {
+              window.removeEventListener('storage', storageHandler)
+              channel?.close()
+            }
+          },
           async setSchedule(roomId, month, date, memberId, value) {
             const room = readRoom(roomId)
             if (!room) throw new Error('Room not found')
@@ -1197,6 +1526,16 @@
             else room.schedules[month][date][memberId] = schedule
             if (Object.keys(room.schedules[month][date]).length === 0) delete room.schedules[month][date]
             writeRoom(roomId, room)
+            if ('BroadcastChannel' in window) {
+              const channel = new BroadcastChannel(`tiny-schedule:${roomId}`)
+              channel.postMessage({ type: 'changed' })
+              channel.close()
+            }
+          },
+          async setHoliday(roomId, month, date, value) {
+            const room = readRoom(roomId)
+            if (!room) throw new Error('Room not found')
+            writeRoom(roomId, applyLocalHolidayChange(room, month, date, value))
             if ('BroadcastChannel' in window) {
               const channel = new BroadcastChannel(`tiny-schedule:${roomId}`)
               channel.postMessage({ type: 'changed' })
@@ -1247,11 +1586,42 @@
             stream.addEventListener('auth_revoked', () => handlers.onError(new Error('Firebase access revoked')))
             return () => stream.close()
           },
+          subscribeHolidays(roomId, month, handlers) {
+            let currentValue = {}
+            const stream = new EventSource(firebaseEndpoint(databaseUrl, holidayPath(roomId, month)))
+            stream.onopen = () => handlers.onConnection('online')
+            stream.onerror = () => handlers.onConnection('offline')
+
+            const receive = (type) => (event) => {
+              try {
+                const payload = JSON.parse(event.data)
+                currentValue = applyRealtimeEvent(currentValue, { ...payload, type })
+                handlers.onValue(currentValue)
+              } catch (error) {
+                handlers.onError(error instanceof Error ? error : new Error(String(error)))
+              }
+            }
+            stream.addEventListener('put', receive('put'))
+            stream.addEventListener('patch', receive('patch'))
+            stream.addEventListener('cancel', () => handlers.onError(new Error('Firebase access denied')))
+            stream.addEventListener('auth_revoked', () => handlers.onError(new Error('Firebase access revoked')))
+            return () => stream.close()
+          },
           async setSchedule(roomId, month, date, memberId, value) {
             const path = ['rooms', roomId, 'schedules', month, date, memberId]
             const schedule = serializeMemberSchedule(value)
             if (schedule === null) await request(path, { method: 'DELETE' })
             else await request(path, { method: 'PUT', body: JSON.stringify(schedule) })
+          },
+          async setHoliday(roomId, month, date, value) {
+            const path = holidayPath(roomId, month, date)
+            if (value === null) {
+              await request(path, { method: 'DELETE' })
+              return
+            }
+            const holidayName = normalizeTeamHolidayName(value)
+            if (!holidayName) throw new RangeError('팀 휴일명은 1~20자로 입력해 주세요.')
+            await request(path, { method: 'PUT', body: JSON.stringify(holidayName) })
           },
         }
       }
@@ -1583,6 +1953,20 @@
                 <h2 class="selected-date"></h2>
                 <span class="editor-person"></span>
               </div>
+              <div class="holiday-details">
+                <div class="holiday-detail-list" aria-label="선택 날짜 휴일"></div>
+                <button class="text-button holiday-edit-button" type="button" aria-expanded="false" aria-controls="holiday-editor">휴일 추가</button>
+              </div>
+              <div class="holiday-editor" id="holiday-editor" hidden>
+                <label for="team-holiday-input">팀 휴일명</label>
+                <input id="team-holiday-input" maxlength="20" autocomplete="off" placeholder="예: 회사 창립기념일" aria-describedby="team-holiday-error">
+                <p class="custom-error" id="team-holiday-error"></p>
+                <div class="custom-actions">
+                  <button class="text-button" type="button" data-holiday-action="close">닫기</button>
+                  <button class="text-button" type="button" data-holiday-action="delete">삭제</button>
+                  <button class="text-button" type="button" data-holiday-action="save">저장</button>
+                </div>
+              </div>
               <div class="day-summary" aria-label="선택 날짜 전체 일정"></div>
               <div class="status-buttons" role="group" aria-label="내 일정 상태">
                 <button class="status-button" type="button" data-status="none">없음</button>
@@ -1611,6 +1995,14 @@
         const calendarGrid = root.querySelector('.calendar-grid')
         const selectedDateElement = root.querySelector('.selected-date')
         const editorPerson = root.querySelector('.editor-person')
+        const holidayDetailList = root.querySelector('.holiday-detail-list')
+        const holidayEditButton = root.querySelector('.holiday-edit-button')
+        const holidayEditor = root.querySelector('#holiday-editor')
+        const teamHolidayInput = root.querySelector('#team-holiday-input')
+        const teamHolidayErrorElement = root.querySelector('#team-holiday-error')
+        const holidaySaveButton = root.querySelector('[data-holiday-action="save"]')
+        const holidayDeleteButton = root.querySelector('[data-holiday-action="delete"]')
+        const holidayCloseButton = root.querySelector('[data-holiday-action="close"]')
         const daySummary = root.querySelector('.day-summary')
         const statusButtons = Array.from(root.querySelectorAll('[data-status]'))
         const customButton = root.querySelector('[data-status="custom"]')
@@ -1628,12 +2020,26 @@
         let monthIndex = today.getMonth()
         let selectedDate = dateKey(year, monthIndex, today.getDate())
         let schedules = {}
+        let teamHolidays = {}
         let unsubscribeMonth = () => {}
+        let unsubscribeHolidays = () => {}
         let saving = false
+        let holidaySaving = false
+        let holidayPanelOpen = false
+        let holidayDraft = ''
+        let holidayError = ''
         let customPanelOpen = false
         let customDraft = ''
         let customError = ''
         const subscriptionGuard = createSubscriptionGuard()
+        const unsupportedYearNotices = createUnsupportedYearNoticeTracker()
+        const teamHolidayRevisions = new Map()
+
+        const resetHolidayEditor = () => {
+          holidayPanelOpen = false
+          holidayDraft = ''
+          holidayError = ''
+        }
 
         const resetCustomEditor = () => {
           customPanelOpen = false
@@ -1682,11 +2088,26 @@
             const button = createElement('button', 'day-cell')
             button.type = 'button'
             button.setAttribute('role', 'gridcell')
-            button.setAttribute('aria-label', `${monthIndex + 1}월 ${cell.day}일 일정 보기`)
+            const publicHoliday = getPublicHoliday(cell.key)
+            const teamHoliday = normalizeTeamHolidayName(teamHolidays[cell.key])
+            const holidayLabel = combineHolidayLabels(publicHoliday, teamHoliday)
+            button.setAttribute(
+              'aria-label',
+              `${monthIndex + 1}월 ${cell.day}일${holidayLabel ? ` ${holidayLabel}` : ''} 일정 보기`,
+            )
             if (cell.isSunday) button.classList.add('sunday')
             if (cell.isToday) button.classList.add('today')
             if (cell.key === selectedDate) button.classList.add('selected')
-            button.append(createElement('span', 'day-number', String(cell.day)))
+            if (publicHoliday) button.classList.add('public-holiday')
+            const dayHeading = createElement('span', 'day-heading')
+            dayHeading.append(createElement('span', 'day-number', String(cell.day)))
+            if (publicHoliday) {
+              dayHeading.append(createElement('span', 'holiday-label public', publicHoliday))
+            }
+            if (teamHoliday) {
+              dayHeading.append(createElement('span', 'holiday-label team', teamHoliday))
+            }
+            button.append(dayHeading)
             const summary = summarizeDay(schedules[cell.key], room.members)
             summary.badges.forEach((badge) => {
               const badgeClass = FIXED_STATUSES.find((status) => badge.schedule[status])
@@ -1696,6 +2117,7 @@
             if (summary.hiddenCount > 0) button.append(createElement('span', 'more-count', `+${summary.hiddenCount}`))
             button.addEventListener('click', () => {
               selectedDate = cell.key
+              resetHolidayEditor()
               resetCustomEditor()
               renderGrid()
               renderEditor()
@@ -1710,6 +2132,33 @@
           editorPerson.textContent = selectedMemberId
             ? `${room.members[selectedMemberId].name}의 일정`
             : '먼저 내 이름을 선택하세요'
+          const publicHoliday = getPublicHoliday(selectedDate)
+          const teamHoliday = normalizeTeamHolidayName(teamHolidays[selectedDate])
+          holidayDetailList.replaceChildren()
+          if (publicHoliday) {
+            holidayDetailList.append(
+              createElement('span', 'holiday-detail public', `공휴일 · ${publicHoliday}`),
+            )
+          }
+          if (teamHoliday) {
+            holidayDetailList.append(
+              createElement('span', 'holiday-detail team', `팀 휴일 · ${teamHoliday}`),
+            )
+          }
+          if (!publicHoliday && !teamHoliday) {
+            holidayDetailList.append(createElement('span', 'holiday-detail empty', '휴일 없음'))
+          }
+          holidayEditButton.textContent = teamHoliday ? '휴일 수정' : '휴일 추가'
+          holidayEditButton.setAttribute('aria-expanded', String(holidayPanelOpen))
+          holidayEditButton.disabled = holidaySaving
+          holidayEditor.hidden = !holidayPanelOpen
+          teamHolidayInput.value = holidayDraft
+          teamHolidayInput.disabled = holidaySaving
+          teamHolidayInput.setAttribute('aria-invalid', String(Boolean(holidayError)))
+          teamHolidayErrorElement.textContent = holidayError
+          holidaySaveButton.disabled = holidaySaving
+          holidayDeleteButton.disabled = holidaySaving || !teamHoliday
+          holidayCloseButton.disabled = holidaySaving
           daySummary.replaceChildren()
           const selectedSchedules = schedules[selectedDate] ?? {}
           orderedMembers(room.members).forEach(([memberId, member]) => {
@@ -1780,10 +2229,46 @@
           }
         }
 
+        const persistTeamHoliday = async (nextValue, successMessage) => {
+          if (holidaySaving) return false
+          const date = selectedDate
+          const month = monthKey(year, monthIndex)
+          const previousHoliday = normalizeTeamHolidayName(teamHolidays[date])
+          const revisionAtStart = teamHolidayRevisions.get(date) ?? 0
+          const holidayName = serializeTeamHoliday(nextValue)
+          if (holidayName === null) delete teamHolidays[date]
+          else teamHolidays[date] = holidayName
+          holidaySaving = true
+          renderGrid()
+          renderEditor()
+          try {
+            await repository.setHoliday(roomId, month, date, holidayName)
+            showToast(successMessage)
+            return true
+          } catch {
+            teamHolidays = rollbackTeamHolidayWrite(
+              teamHolidays,
+              date,
+              previousHoliday,
+              revisionAtStart,
+              teamHolidayRevisions.get(date) ?? 0,
+            )
+            showToast('휴일을 저장하지 못했어요. 다시 시도해 주세요.')
+            return false
+          } finally {
+            holidaySaving = false
+            renderGrid()
+            renderEditor()
+          }
+        }
+
         const subscribe = () => {
           const generation = subscriptionGuard.begin()
           unsubscribeMonth()
+          unsubscribeHolidays()
           schedules = {}
+          teamHolidays = {}
+          teamHolidayRevisions.clear()
           renderGrid()
           renderEditor()
           const key = monthKey(year, monthIndex)
@@ -1803,6 +2288,35 @@
               showToast('실시간 연결을 확인해 주세요.')
             },
           })
+          unsubscribeHolidays = repository.subscribeHolidays(roomId, key, {
+            onValue(value) {
+              if (!subscriptionGuard.isCurrent(generation)) return
+              const nextTeamHolidays = Object.fromEntries(
+                Object.entries(value ?? {})
+                  .map(([date, name]) => [date, normalizeTeamHolidayName(name)])
+                  .filter(([, name]) => Boolean(name)),
+              )
+              const changedDates = new Set([
+                ...Object.keys(teamHolidays),
+                ...Object.keys(nextTeamHolidays),
+              ])
+              changedDates.forEach((date) => {
+                if (teamHolidays[date] !== nextTeamHolidays[date]) {
+                  teamHolidayRevisions.set(date, (teamHolidayRevisions.get(date) ?? 0) + 1)
+                }
+              })
+              teamHolidays = nextTeamHolidays
+              renderGrid()
+              renderEditor()
+            },
+            onConnection(state) {
+              if (subscriptionGuard.isCurrent(generation)) setConnectionState(state)
+            },
+            onError() {
+              if (!subscriptionGuard.isCurrent(generation)) return
+              showToast('팀 휴일 실시간 연결을 확인해 주세요.')
+            },
+          })
         }
 
         const changeMonth = (offset) => {
@@ -1811,9 +2325,69 @@
           monthIndex = next.monthIndex
           const isCurrentMonth = year === today.getFullYear() && monthIndex === today.getMonth()
           selectedDate = dateKey(year, monthIndex, isCurrentMonth ? today.getDate() : 1)
+          resetHolidayEditor()
           resetCustomEditor()
           subscribe()
+          if (unsupportedYearNotices.shouldNotify(year)) {
+            showToast('이 연도의 공휴일 데이터는 준비되지 않았어요.')
+          }
         }
+
+        holidayEditButton.addEventListener('click', () => {
+          if (holidaySaving) return
+          if (holidayPanelOpen) {
+            resetHolidayEditor()
+            renderEditor()
+            holidayEditButton.focus()
+            return
+          }
+          holidayPanelOpen = true
+          holidayDraft = normalizeTeamHolidayName(teamHolidays[selectedDate]) ?? ''
+          holidayError = ''
+          renderEditor()
+          requestAnimationFrame(() => teamHolidayInput.focus())
+        })
+
+        teamHolidayInput.addEventListener('input', () => {
+          holidayDraft = teamHolidayInput.value
+          holidayError = ''
+          teamHolidayInput.removeAttribute('aria-invalid')
+          teamHolidayErrorElement.textContent = ''
+        })
+
+        holidaySaveButton.addEventListener('click', async () => {
+          if (holidaySaving) return
+          const holidayName = normalizeTeamHolidayName(holidayDraft)
+          if (!holidayName) {
+            holidayError = holidayDraft.trim().length > 20
+              ? '휴일명은 20자 이내로 입력해 주세요.'
+              : '휴일명을 입력해 주세요.'
+            renderEditor()
+            teamHolidayInput.focus()
+            return
+          }
+          if (await persistTeamHoliday(holidayName, '팀 휴일을 저장했어요.')) {
+            resetHolidayEditor()
+            renderEditor()
+            holidayEditButton.focus()
+          }
+        })
+
+        holidayDeleteButton.addEventListener('click', async () => {
+          if (holidaySaving || !teamHolidays[selectedDate]) return
+          if (await persistTeamHoliday(null, '팀 휴일을 삭제했어요.')) {
+            resetHolidayEditor()
+            renderEditor()
+            holidayEditButton.focus()
+          }
+        })
+
+        holidayCloseButton.addEventListener('click', () => {
+          if (holidaySaving) return
+          resetHolidayEditor()
+          renderEditor()
+          holidayEditButton.focus()
+        })
 
         statusButtons.forEach((button) => {
           button.addEventListener('click', async () => {
@@ -1891,6 +2465,7 @@
         root.querySelector('#new-room').addEventListener('click', () => {
           subscriptionGuard.begin()
           unsubscribeMonth()
+          unsubscribeHolidays()
           returnToCreation({
             currentUrl: location.href,
             replaceUrl: (url) => history.replaceState(null, '', url),
@@ -1912,7 +2487,10 @@
         renderGrid()
         renderEditor()
         subscribe()
-        return () => unsubscribeMonth()
+        return () => {
+          unsubscribeMonth()
+          unsubscribeHolidays()
+        }
       }
 
       async function boot() {
