@@ -1330,6 +1330,24 @@
         )
       }
 
+      export function applyScheduleRangeToMonth(
+        currentSchedules,
+        dates,
+        memberId,
+        value,
+        visibleMonth,
+      ) {
+        const nextSchedules = cloneJson(currentSchedules) ?? {}
+        const schedule = serializeMemberSchedule(value)
+        dates.filter((date) => date.startsWith(`${visibleMonth}-`)).forEach((date) => {
+          nextSchedules[date] ??= {}
+          if (schedule === null) delete nextSchedules[date][memberId]
+          else nextSchedules[date][memberId] = cloneJson(schedule)
+          if (Object.keys(nextSchedules[date]).length === 0) delete nextSchedules[date]
+        })
+        return nextSchedules
+      }
+
       export function memberSchedulesMatch(leftValue, rightValue) {
         const left = serializeMemberSchedule(leftValue)
         const right = serializeMemberSchedule(rightValue)
@@ -2744,22 +2762,26 @@
           }
           const memberId = selectedMemberId
           const schedule = serializeMemberSchedule(nextValue)
+          const previousSchedules = cloneJson(schedules)
+          const visibleMonth = monthKey(year, monthIndex)
+          schedules = applyScheduleRangeToMonth(
+            schedules,
+            dates,
+            memberId,
+            schedule,
+            visibleMonth,
+          )
           saving = true
           rangeError = ''
+          renderGrid()
           renderEditor()
           try {
             await repository.setScheduleRange(roomId, dates, memberId, schedule)
-            const visibleMonth = monthKey(year, monthIndex)
-            dates.filter((date) => date.startsWith(`${visibleMonth}-`)).forEach((date) => {
-              schedules[date] ??= {}
-              if (schedule === null) delete schedules[date][memberId]
-              else schedules[date][memberId] = schedule
-              if (Object.keys(schedules[date]).length === 0) delete schedules[date]
-            })
             showToast(`${dates.length}일 ${successLabel}을 저장했어요.`)
             resetRangeEditor()
             return true
           } catch {
+            schedules = previousSchedules
             rangeError = '기간 일정을 저장하지 못했어요. 다시 시도해 주세요.'
             showToast(rangeError)
             return false
@@ -2835,10 +2857,17 @@
           }
           if (rangeMode) {
             rangeDraft = nextValue
-            if (await persistScheduleRange(nextValue, '기타 일정')) {
-              resetCustomEditor()
-              renderEditor()
+            const savePromise = persistScheduleRange(nextValue, '기타 일정')
+            resetCustomEditor()
+            renderEditor()
+            if (await savePromise) {
               customButton.focus()
+            } else {
+              customPanelOpen = true
+              customDraft = nextValue.custom ?? ''
+              customError = ''
+              renderEditor()
+              requestAnimationFrame(() => customInput.focus())
             }
             return
           }
