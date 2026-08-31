@@ -2732,18 +2732,18 @@
           renderEditor()
         })
 
-        rangeApplyButton.addEventListener('click', async () => {
-          if (!rangeMode || !selectedMemberId || saving) return
+        const persistScheduleRange = async (nextValue, successLabel = '일정') => {
+          if (!rangeMode || !selectedMemberId || saving) return false
           let dates
           try {
             dates = buildDateRange(selectedDate, rangeEndDate)
           } catch (error) {
             rangeError = error instanceof Error ? error.message : '날짜 범위를 확인해 주세요.'
             renderEditor()
-            return
+            return false
           }
           const memberId = selectedMemberId
-          const schedule = serializeMemberSchedule(rangeDraft)
+          const schedule = serializeMemberSchedule(nextValue)
           saving = true
           rangeError = ''
           renderEditor()
@@ -2756,16 +2756,22 @@
               else schedules[date][memberId] = schedule
               if (Object.keys(schedules[date]).length === 0) delete schedules[date]
             })
-            showToast(`${dates.length}일 일정을 저장했어요.`)
+            showToast(`${dates.length}일 ${successLabel}을 저장했어요.`)
             resetRangeEditor()
+            return true
           } catch {
             rangeError = '기간 일정을 저장하지 못했어요. 다시 시도해 주세요.'
             showToast(rangeError)
+            return false
           } finally {
             saving = false
             renderGrid()
             renderEditor()
           }
+        }
+
+        rangeApplyButton.addEventListener('click', async () => {
+          await persistScheduleRange(rangeDraft)
         })
 
         statusButtons.forEach((button) => {
@@ -2829,10 +2835,11 @@
           }
           if (rangeMode) {
             rangeDraft = nextValue
-            rangeError = ''
-            resetCustomEditor()
-            renderEditor()
-            customButton.focus()
+            if (await persistScheduleRange(nextValue, '기타 일정')) {
+              resetCustomEditor()
+              renderEditor()
+              customButton.focus()
+            }
             return
           }
           if (await persistMemberSchedule(nextValue, '기타 일정을 저장했어요.')) {
