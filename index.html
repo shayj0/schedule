@@ -919,7 +919,7 @@
         position: fixed;
         z-index: 20;
         left: 50%;
-        bottom: 20px;
+        bottom: calc(104px + env(safe-area-inset-bottom, 0px));
         width: max-content;
         max-width: calc(100vw - 32px);
         transform: translateX(-50%);
@@ -1021,6 +1021,7 @@
         }
         .schedule-badge { font-size: 10px; }
         .status-editor { position: static; box-shadow: none; }
+        .toast { bottom: 20px; }
       }
 
       @media (prefers-reduced-motion: no-preference) {
