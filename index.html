@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#f1f5f1">
-    <meta name="default-database-url" content="">
+    <meta name="default-database-url" content="https://schedule-ca02f-default-rtdb.firebaseio.com">
     <title>우리팀 달력</title>
     <style>
       :root {
@@ -1229,7 +1229,7 @@
         }
 
         const holidayName = normalizeTeamHolidayName(value)
-        if (!holidayName) throw new RangeError('팀 휴일명은 1~20자로 입력해 주세요.')
+        if (!holidayName) throw new RangeError('회사 휴일명은 1~20자로 입력해 주세요.')
         nextRoom.holidays ??= {}
         nextRoom.holidays[month] ??= {}
         nextRoom.holidays[month][date] = holidayName
@@ -1610,7 +1610,7 @@
               return
             }
             const holidayName = normalizeTeamHolidayName(value)
-            if (!holidayName) throw new RangeError('팀 휴일명은 1~20자로 입력해 주세요.')
+            if (!holidayName) throw new RangeError('회사 휴일명은 1~20자로 입력해 주세요.')
             await request(path, { method: 'PUT', body: JSON.stringify(holidayName) })
           },
         }
@@ -1948,7 +1948,7 @@
                 <button class="text-button holiday-edit-button" type="button" aria-expanded="false" aria-controls="holiday-editor">휴일 추가</button>
               </div>
               <div class="holiday-editor" id="holiday-editor" hidden>
-                <label for="team-holiday-input">팀 휴일명</label>
+                <label for="team-holiday-input">회사 휴일명</label>
                 <input id="team-holiday-input" maxlength="20" autocomplete="off" placeholder="예: 회사 창립기념일" aria-describedby="team-holiday-error">
                 <p class="custom-error" id="team-holiday-error"></p>
                 <div class="custom-actions">
@@ -2304,7 +2304,7 @@
             },
             onError() {
               if (!subscriptionGuard.isCurrent(generation)) return
-              showToast('팀 휴일 실시간 연결을 확인해 주세요.')
+              showToast('회사 휴일 실시간 연결을 확인해 주세요.')
             },
           })
         }
@@ -2356,7 +2356,7 @@
             teamHolidayInput.focus()
             return
           }
-          if (await persistTeamHoliday(holidayName, '팀 휴일을 저장했어요.')) {
+          if (await persistTeamHoliday(holidayName, '회사 휴일을 저장했어요.')) {
             resetHolidayEditor()
             renderEditor()
             holidayEditButton.focus()
@@ -2365,7 +2365,7 @@
 
         holidayDeleteButton.addEventListener('click', async () => {
           if (holidaySaving || !teamHolidays[selectedDate]) return
-          if (await persistTeamHoliday(null, '팀 휴일을 삭제했어요.')) {
+          if (await persistTeamHoliday(null, '회사 휴일을 삭제했어요.')) {
             resetHolidayEditor()
             renderEditor()
             holidayEditButton.focus()
