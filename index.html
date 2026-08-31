@@ -556,11 +556,6 @@
         background: #ffe5de;
       }
 
-      .holiday-label.team {
-        color: var(--custom-ink);
-        background: var(--custom-bg);
-      }
-
       .schedule-badge {
         display: block;
         width: 100%;
@@ -708,11 +703,6 @@
       .holiday-detail.public {
         color: var(--vacation-ink);
         background: #ffe5de;
-      }
-
-      .holiday-detail.team {
-        color: var(--custom-ink);
-        background: var(--custom-bg);
       }
 
       .holiday-detail.empty {
@@ -2098,14 +2088,14 @@
             if (cell.isSunday) button.classList.add('sunday')
             if (cell.isToday) button.classList.add('today')
             if (cell.key === selectedDate) button.classList.add('selected')
-            if (publicHoliday) button.classList.add('public-holiday')
+            if (publicHoliday || teamHoliday) button.classList.add('public-holiday')
             const dayHeading = createElement('span', 'day-heading')
             dayHeading.append(createElement('span', 'day-number', String(cell.day)))
             if (publicHoliday) {
               dayHeading.append(createElement('span', 'holiday-label public', publicHoliday))
             }
             if (teamHoliday) {
-              dayHeading.append(createElement('span', 'holiday-label team', teamHoliday))
+              dayHeading.append(createElement('span', 'holiday-label public', teamHoliday))
             }
             button.append(dayHeading)
             const summary = summarizeDay(schedules[cell.key], room.members)
@@ -2142,7 +2132,7 @@
           }
           if (teamHoliday) {
             holidayDetailList.append(
-              createElement('span', 'holiday-detail team', `팀 휴일 · ${teamHoliday}`),
+              createElement('span', 'holiday-detail public', `팀 휴일 · ${teamHoliday}`),
             )
           }
           if (!publicHoliday && !teamHoliday) {
