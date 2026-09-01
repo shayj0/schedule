@@ -477,14 +477,14 @@
       .calendar-grid:is([data-member-count="3"], [data-member-count="4"]) {
         --schedule-lane-gap: 1px;
         --schedule-badge-font-size: 7px;
-        --schedule-badge-line-height: 1;
+        --schedule-badge-line-height: 1.2;
         --schedule-badge-padding-block: 0px;
       }
 
       .calendar-grid:is([data-member-count="5"], [data-member-count="6"]) {
         --schedule-lane-gap: 0px;
         --schedule-badge-font-size: 6px;
-        --schedule-badge-line-height: 1;
+        --schedule-badge-line-height: 1.1;
         --schedule-badge-padding-block: 0px;
       }
 
@@ -582,8 +582,10 @@
       .schedule-badge {
         position: relative;
         z-index: 1;
-        display: block;
+        display: flex;
         width: 100%;
+        min-height: 0;
+        align-items: center;
         overflow: hidden;
         border-radius: 4px;
         padding: var(--schedule-badge-padding-block) 3px;
@@ -599,6 +601,22 @@
         grid-template-rows: repeat(var(--schedule-lane-count), minmax(0, 1fr));
         gap: var(--schedule-lane-gap);
         margin-top: 2px;
+      }
+
+      .calendar-grid:is([data-member-count="3"], [data-member-count="4"]) .schedule-lanes {
+        height: calc(100% - 21px);
+        margin-top: 0;
+      }
+
+      .calendar-grid:is([data-member-count="5"], [data-member-count="6"]) .day-heading,
+      .calendar-grid:is([data-member-count="5"], [data-member-count="6"]) .day-number {
+        height: 18px;
+        line-height: 18px;
+      }
+
+      .calendar-grid:is([data-member-count="5"], [data-member-count="6"]) .schedule-lanes {
+        height: calc(100% - 18px);
+        margin-top: 0;
       }
 
       .schedule-badge.placeholder {
