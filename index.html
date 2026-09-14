@@ -455,6 +455,18 @@
         background: #79aeca;
       }
 
+      .member-emoji {
+        display: inline-block;
+        width: 18px;
+        height: 18px;
+        margin-right: 5px;
+        vertical-align: -3px;
+        text-align: center;
+        font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
+        font-size: 16px;
+        line-height: 18px;
+      }
+
       .calendar-wrap {
         border-top: 1px solid var(--line);
         border-left: 1px solid var(--line);
@@ -2162,6 +2174,17 @@
         renderMemberFields()
       }
 
+      const MEMBER_EMOJIS = new Map([
+        ['수현', '🥔'],
+        ['하연', '🐇'],
+        ['지숙', '🐥'],
+        ['원주', '🐈‍⬛'],
+      ])
+
+      export function memberEmoji(name) {
+        return MEMBER_EMOJIS.get(name) ?? ''
+      }
+
       function statusLabel(status) {
         return STATUS_LABELS[status] ?? (status === 'custom' ? '기타' : '없음')
       }
@@ -2392,9 +2415,10 @@
             button.type = 'button'
             button.setAttribute('aria-pressed', String(selectedMemberId === memberId))
             button.setAttribute('aria-label', `${member.name} 선택`)
-            const dot = createElement('span', 'member-dot')
-            dot.setAttribute('aria-hidden', 'true')
-            button.append(dot, document.createTextNode(member.name))
+            const emoji = memberEmoji(member.name)
+            const marker = createElement('span', emoji ? 'member-emoji' : 'member-dot', emoji)
+            marker.setAttribute('aria-hidden', 'true')
+            button.append(marker, document.createTextNode(member.name))
             button.addEventListener('click', () => {
               selectedMemberId = memberId
               localStorage.setItem(storageKey, memberId)
