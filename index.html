@@ -2327,7 +2327,7 @@
             </section>
           </section>`
 
-        root.querySelector('#team-name').textContent = room.meta.title
+        root.querySelector('#team-name').textContent = roomId === 'ade558d4-fd17-4788-851d-0c9179e24f0b' ? room.meta.title.replace(/^EE girls/, 'AVD/SVI & EE girls') : room.meta.title
         const connectionState = root.querySelector('.connection-state')
         const monthTitle = root.querySelector('.month-title')
         const memberPicker = root.querySelector('.member-picker')
